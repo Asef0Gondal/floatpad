@@ -3,6 +3,21 @@
   "productName": "FloatPad",
   "version": "1.0.0",
   "description": "Lean floating reference pad for macOS — board, video, web and write modes in one always-on-top overlay",
+  "author": "Asif Gondal",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "https://github.com/Asef0Gondal/floatpad.git"
+  },
+  "keywords": [
+    "electron",
+    "react",
+    "floating-window",
+    "overlay",
+    "reference-pad",
+    "macos",
+    "utility"
+  ],
   "main": "public/electron.js",
   "scripts": {
     "dev:vite": "vite",
