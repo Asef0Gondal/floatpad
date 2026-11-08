@@ -2,28 +2,28 @@
   "name": "floatpad",
   "productName": "FloatPad",
   "version": "1.0.0",
-  "description": "Lean floating reference pad — board, video, web",
+  "description": "Lean floating reference pad for macOS — board, video, web and write modes in one always-on-top overlay",
   "main": "public/electron.js",
   "scripts": {
-    "dev:vite":     "vite",
+    "dev:vite": "vite",
     "dev:electron": "cross-env APP_URL=http://localhost:5173 electron .",
-    "start":        "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
-    "build":        "vite build",
-    "dist:mac":     "npm run build && electron-builder --mac",
-    "dist:win":     "npm run build && electron-builder --win"
+    "start": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
+    "build": "vite build",
+    "dist:mac": "npm run build && electron-builder --mac",
+    "dist:win": "npm run build && electron-builder --win"
   },
   "dependencies": {
-    "react":     "^18.2.0",
+    "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
     "@vitejs/plugin-react": "^4.2.1",
-    "concurrently":         "^8.2.2",
-    "cross-env":            "^7.0.3",
-    "electron":             "^28.3.3",
-    "electron-builder":     "^24.13.3",
-    "vite":                 "^5.1.4",
-    "wait-on":              "^7.2.0"
+    "concurrently": "^8.2.2",
+    "cross-env": "^7.0.3",
+    "electron": "^28.3.3",
+    "electron-builder": "^24.13.3",
+    "vite": "^5.4.0",
+    "wait-on": "^7.2.0"
   },
   "build": {
     "appId": "com.floatpad.app",
@@ -35,18 +35,29 @@
     },
     "files": [
       "public/electron.js",
+      "public/screenshot.html",
       "dist/**/*",
       "package.json"
     ],
     "mac": {
       "category": "public.app-category.utilities",
+      "icon": "assets/icon.png",
       "target": [
-        { "target": "dmg", "arch": ["arm64", "x64"] },
-        { "target": "zip", "arch": ["arm64", "x64"] }
+        {
+          "target": "dmg",
+          "arch": [
+            "arm64",
+            "x64"
+          ]
+        }
       ]
     },
     "win": {
-      "target": "nsis"
+      "target": "nsis",
+      "icon": "assets/icon.png"
     }
+  },
+  "engines": {
+    "node": ">=18.0.0"
   }
 }

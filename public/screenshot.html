@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>
+* { margin:0; padding:0; box-sizing:border-box; }
+html,body { width:100vw; height:100vh; overflow:hidden; background:transparent; cursor:crosshair; }
+#canvas  { position:absolute; inset:0; }
+#sel {
+  position:absolute; display:none; pointer-events:none;
+  border:1.5px solid #4a90e2;
+  box-shadow: 0 0 0 9999px rgba(0,0,0,0.38);
+}
+#hint {
+  position:fixed; bottom:18px; left:50%; transform:translateX(-50%);
+  background:rgba(0,0,0,0.72); color:#ccc; font-size:12px;
+  font-family:-apple-system,sans-serif; padding:6px 16px; border-radius:20px;
+  pointer-events:none; white-space:nowrap;
+}
+#size {
+  position:fixed; top:10px; left:10px;
+  background:rgba(0,0,0,0.6); color:#aaa; font-size:11px;
+  font-family:monospace; padding:3px 8px; border-radius:4px;
+  pointer-events:none;
+}
+</style>
+</head>
+<body>
+<canvas id="canvas"></canvas>
+<div id="sel"></div>
+<div id="hint">Drag to select · Enter or double-click to capture · Esc to cancel</div>
+<div id="size">–</div>
+<script>
+const { ipcRenderer } = require('electron');
+
+const canvas = document.getElementById('canvas');
+const ctx    = canvas.getContext('2d');
+const sel    = document.getElementById('sel');
+const sizeEl = document.getElementById('size');
+
+let startX=0, startY=0, dragging=false;
+let rect = { x:0, y:0, w:0, h:0 };
+let bgLoaded = false;
+
+// ── Capture screen via main process (desktopCapturer lives there in Electron 16+) ──
+async function captureScreen() {
+  const dataUrl = await ipcRenderer.invoke('capture-screen');
+  if (!dataUrl) return;
+  const img = new Image();
+  img.onload = () => {
+    canvas.width  = window.innerWidth;
+    canvas.height = window.innerHeight;
+    ctx.drawImage(img, 0, 0, canvas.width, canvas.height);
+    bgLoaded = true;
+  };
+  img.src = dataUrl;
+}
+captureScreen();
+
+document.addEventListener('mousedown', e => {
+  startX=e.clientX; startY=e.clientY; dragging=true;
+  sel.style.display='block';
+  rect={x:startX,y:startY,w:0,h:0};
+});
+
+document.addEventListener('mousemove', e => {
+  if (!dragging) return;
+  const x=Math.min(e.clientX,startX), y=Math.min(e.clientY,startY);
+  const w=Math.abs(e.clientX-startX), h=Math.abs(e.clientY-startY);
+  rect={x,y,w,h};
+  sel.style.cssText=`display:block;left:${x}px;top:${y}px;width:${w}px;height:${h}px;`;
+  sizeEl.textContent=`${w} × ${h}`;
+});
+
+document.addEventListener('mouseup', () => { dragging=false; });
+
+document.addEventListener('dblclick', () => { if (rect.w>4 && rect.h>4) capture(); });
+
+document.addEventListener('keydown', e => {
+  if (e.key==='Escape') { ipcRenderer.send('screenshot-cancel'); return; }
+  if (e.key==='Enter' && rect.w>4 && rect.h>4) capture();
+});
+
+function capture() {
+  const dpr = window.devicePixelRatio || 1;
+  const tmp = document.createElement('canvas');
+  tmp.width  = Math.round(rect.w * dpr);
+  tmp.height = Math.round(rect.h * dpr);
+  tmp.getContext('2d').drawImage(
+    canvas,
+    rect.x * dpr, rect.y * dpr, rect.w * dpr, rect.h * dpr,
+    0, 0, tmp.width, tmp.height
+  );
+  ipcRenderer.send('screenshot-done', tmp.toDataURL('image/png'));
+}
+</script>
+</body>
+</html>
