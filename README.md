@@ -15,6 +15,7 @@
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white">
   <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey?logo=apple&logoColor=white">
+  <a href="https://github.com/Asef0Gondal/floatpad/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Asef0Gondal/floatpad/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
 
@@ -71,7 +72,7 @@ Built for video editors, designers and developers who need a second screen that 
 - **Screenplay mode**: `Tab` cycles element types — SCENE → Action → CHARACTER → Dialogue → (parenthetical) — with automatic uppercase scene headings
 - **Markdown / freeform mode** for notes and drafts
 - Live word/page statistics, autoreload of the last document, and autosave to local storage
-- Open and save `.txt` / `.md` files through native dialogs
+- Open and save `.txt`, `.md` and Fountain files through native dialogs
 - Built-in 25-minute focus timer
 
 ## Window & workflow
@@ -158,7 +159,7 @@ floatpad/
 
 ## Getting started
 
-**Requirements:** macOS, Node.js 18 or newer.
+**Requirements:** macOS, Node.js 18 or newer (20 LTS recommended — see `.nvmrc`).
 
 ```bash
 # Install dependencies
@@ -188,7 +189,8 @@ FloatPad runs entirely on your machine. There is no account, no telemetry and no
 ## Repository notes
 
 - `dist/`, `release/` and `node_modules/` are ignored; only sources are committed.
-- The `.npm-local/` directory is a leftover offline npm cache from the original packaging run. It is not used by `npm install` and can be ignored.
+- Every push to `main` runs the CI workflow (`.github/workflows/ci.yml`), which installs dependencies and builds the Vite bundle.
+- `.npm-local/` was a leftover offline npm cache from the first packaging run. It is ignored and no longer tracked by the repository.
 
 ## License
 
