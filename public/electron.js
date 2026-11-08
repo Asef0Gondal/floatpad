@@ -472,24 +472,17 @@ ipcMain.on('show-all', () => {
 });
 
 // Write-mode file dialogs
-ipcMain.handle('dialog-write-save', async (_, mode) => {
-  const filters = mode === 'script'
-    ? [
-        { name:'PDF', extensions:['pdf'] },
-        { name:'Text', extensions:['txt'] },
-        { name:'Markdown', extensions:['md'] },
-      ]
-    : [
-        { name:'Markdown', extensions:['md'] },
-        { name:'Text', extensions:['txt'] },
-      ];
-
+ipcMain.handle('dialog-write-save', async () => {
   const r = await dialog.showSaveDialog(win, {
     title: 'Save document', defaultPath: 'document',
-    filters,
+    filters: [
+      { name:'Markdown', extensions:['md'] },
+      { name:'Text',     extensions:['txt'] },
+      { name:'Fountain', extensions:['fountain'] },
+    ],
   });
   if (r.canceled) return null;
-  return { path: r.filePath, isPdf: r.filePath.endsWith('.pdf') };
+  return { path: r.filePath };
 });
 
 ipcMain.handle('dialog-write-open', async () => {

@@ -109,10 +109,10 @@ export default function Write({ active }) {
 
   // ── Export ────────────────────────────────────────────────
   const saveFile = useCallback(async () => {
-    const r = await ipcRenderer.invoke('dialog-write-save', writeMode);
+    const r = await ipcRenderer.invoke('dialog-write-save');
     if (!r) return;
-    await ipcRenderer.invoke('file-write', r.path, r.isPdf ? content : content);
-  }, [content, writeMode]);
+    await ipcRenderer.invoke('file-write', r.path, content);
+  }, [content]);
 
   const loadFile = useCallback(async () => {
     const filePath = await ipcRenderer.invoke('dialog-write-open');
