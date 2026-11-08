@@ -29,13 +29,25 @@ const SIZE_PRESETS = [
 ];
 
 const SEEN_KEY = 'fp_onboarding_done';
+const MODE_KEY = 'fp_last_mode';
 
 // Determine if we're in a standalone panel window
 const urlParams   = new URLSearchParams(window.location.search);
 const panelParam  = urlParams.get('panel'); // 'board' | 'video' | 'web' | 'write' | null
 
+// Standalone windows are pinned to their panel; the main window reopens
+// on whichever mode was active last time.
+function getInitialMode() {
+  if (panelParam) return panelParam;
+  try {
+    const saved = localStorage.getItem(MODE_KEY);
+    if (saved && MODES.some(m => m.id === saved)) return saved;
+  } catch { /* storage unavailable — fall back to the board */ }
+  return 'board';
+}
+
 export default function App() {
-  const [mode,       setMode]       = useState(panelParam || 'board');
+  const [mode,       setMode]       = useState(getInitialMode);
   const [theme,      setTheme]      = useState(getInitialTheme);
   const [opacity,    setOpacity]    = useState(100);
   const [potato,     setPotato]     = useState(false);
@@ -47,12 +59,17 @@ export default function App() {
     () => !panelParam && !localStorage.getItem(SEEN_KEY)
   );
   // Track which panels have ever been visited (for lazy mounting)
-  const [visited, setVisited] = useState(() => new Set([panelParam || 'board']));
+  const [visited, setVisited] = useState(() => new Set([getInitialMode()]));
 
   const sizeRef = useRef(null);
   const isStandalone = !!panelParam;
 
   // ── Side effects ─────────────────────────────────────────
+
+  // Remember the active mode for the next launch (main window only)
+  useEffect(() => {
+    if (!isStandalone) localStorage.setItem(MODE_KEY, mode);
+  }, [mode, isStandalone]);
 
   // Mark mode as visited for lazy mounting
   useEffect(() => {
