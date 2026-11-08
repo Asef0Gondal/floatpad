@@ -11,6 +11,12 @@ jobs:
     name: Build & Verify
     runs-on: ubuntu-latest
 
+    env:
+      # The job only bundles the renderer, so the ~100 MB Electron runtime is
+      # not needed. Skipping its download keeps installs fast and avoids
+      # flaky failures when the release CDN is unavailable.
+      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
+
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
