@@ -1,27 +1,33 @@
-# Node / JS
+# Dependencies
 node_modules/
+
+# Build output
 dist/
 dist-electron/
+
+# Electron-builder output
 release/
 out/
 build/
 bin/
 
-# Python envs & outputs
-venv/
-__pycache__/
-*.pyc
-*.spec
+# Offline npm cache (legacy, not used by npm install)
+.npm-local/
 
-# System files
+# Logs
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# Environment
+.env
+.env.local
+
+# Caches
+.vite/
+coverage/
+
+# OS files
 .DS_Store
 Thumbs.db
-
-# Heavy media assets
-*.pdf
-*.zip
-*.tar.gz
-*.mp3
-*.wav
-*.mp4
-*.mkv
