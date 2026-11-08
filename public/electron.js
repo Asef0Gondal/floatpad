@@ -167,6 +167,7 @@ function createTray() {
       { label: 'Board',  click: () => { showWin(); win?.webContents.send('set-mode','board'); } },
       { label: 'Video',  click: () => { showWin(); win?.webContents.send('set-mode','video'); } },
       { label: 'Web',    click: () => { showWin(); win?.webContents.send('set-mode','web');   } },
+      { label: 'Write',  click: () => { showWin(); win?.webContents.send('set-mode','write'); } },
       { type: 'separator' },
       { label: 'Quit',   click: () => { app.exit(0); } },
     ]));
