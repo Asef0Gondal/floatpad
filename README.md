@@ -21,11 +21,7 @@
 
 ---
 
-> ### Notice — what FloatPad is *not*
->
-> FloatPad has **nothing to do with [REA ("Reverse Engineer Anything")](https://github.com/morluto/rea)** or any other reverse-engineering project, method or tooling. It is not a reverse-engineered app, not a clone, and not an agent-generated rebuild of somebody else's product.
->
-> FloatPad came into existence for one reason: **I needed it.** As a video editor, I got tired of alt-tabbing away from the timeline every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view. That's the entire origin story. No agenda, no affiliation.
+> FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view. That's the entire origin story.
 >
 > **🦀 Rewrite in progress:** FloatPad is being rewritten from the ground up in **Rust** — fully native, lighter and faster. Everything documented below describes the original Electron/React v1.
 
