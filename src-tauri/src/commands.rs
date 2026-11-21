@@ -4,6 +4,7 @@ use crate::{load_prefs, save_prefs, platform};
 use base64::Engine;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
+use std::path::PathBuf;
 use tauri::{
     webview::{NewWindowResponse, PageLoadEvent, WebviewBuilder},
     AppHandle, Emitter, Manager, PhysicalPosition, PhysicalSize, State, Webview, WebviewUrl,
@@ -78,6 +79,37 @@ pub fn log_js(level: String, msg: String) {
         "info" => log::info!("[js] {msg}"),
         _ => log::error!("[js] {msg}"),
     }
+}
+
+// ── Board autosave (file-based: no localStorage quota, off the UI thread) ─────
+
+fn autosave_path(app: &AppHandle) -> Option<PathBuf> {
+    app.path().app_data_dir().ok().map(|d| d.join("board-autosave.json"))
+}
+
+#[tauri::command]
+pub async fn autosave_board(app: AppHandle, json: String) -> Result<(), String> {
+    let path = autosave_path(&app).ok_or("no app data dir")?;
+    tauri::async_runtime::spawn_blocking(move || {
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
+        }
+        let tmp = path.with_extension("json.tmp");
+        std::fs::write(&tmp, json).map_err(|e| e.to_string())?;
+        std::fs::rename(&tmp, &path).map_err(|e| e.to_string())?;
+        Ok::<(), String>(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+#[tauri::command]
+pub async fn load_autosave_board(app: AppHandle) -> Option<String> {
+    let path = autosave_path(&app)?;
+    tauri::async_runtime::spawn_blocking(move || std::fs::read_to_string(path).ok())
+        .await
+        .ok()
+        .flatten()
 }
 
 // ── Window controls ──────────────────────────────────────────────────────────

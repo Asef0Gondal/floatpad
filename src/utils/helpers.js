@@ -59,13 +59,28 @@ export function uid() { return ++_uid; }
 // After loading a saved board, keep new ids above every restored id
 export function ensureUidAbove(n) { if (Number.isFinite(n) && n >= _uid) _uid = n; }
 
-// Flip the nth GFM task checkbox in Markdown source (Write preview)
+// Flip the nth GFM task checkbox in Markdown source (Write preview).
+// Skips fenced code blocks (marked renders no checkbox there) so the index
+// stays aligned with the preview; also handles blockquoted task items.
 export function toggleTaskAtIndex(text, idx) {
+  const lines = String(text || '').split('\n');
+  let inFence = false;
+  let fenceChar = '';
   let n = -1;
-  return String(text || '').replace(/^(\s*[-*+] \[)([ xX])(\])/gm, (m, a, b, c) => {
-    n += 1;
-    return n === idx ? a + (b === ' ' ? 'x' : ' ') + c : m;
-  });
+  return lines.map(line => {
+    const fence = line.match(/^\s{0,3}(`{3,}|~{3,})/);
+    if (fence) {
+      const ch = fence[1][0];
+      if (!inFence) { inFence = true; fenceChar = ch; }
+      else if (ch === fenceChar) { inFence = false; }
+      return line;
+    }
+    if (inFence) return line;
+    return line.replace(/^(\s*(?:>\s*)*[-*+] \[)([ xX])(\])/, (m, a, b, c) => {
+      n += 1;
+      return n === idx ? a + (b === ' ' ? 'x' : ' ') + c : m;
+    });
+  }).join('\n');
 }
 
 // Potato mode opacity decision (pure): dim to 70% on entry, restore the
@@ -74,4 +89,17 @@ export function potatoTransition(turningOn, currentOpacity, stashedOpacity) {
   return turningOn
     ? { opacity: 70, stash: currentOpacity }
     : { opacity: stashedOpacity, stash: stashedOpacity };
+}
+
+// Normalize a board image record, filling defaults (pure — used on add/restore).
+export function normalizeImageModel(image, index = 0) {
+  return {
+    ...image,
+    opacity: image.opacity ?? 1,
+    z: image.z ?? index,
+    gray: image.gray ?? false,
+    source: image.source ?? null,
+    pixelated: image.pixelated ?? false,
+    comment: image.comment ?? '',
+  };
 }

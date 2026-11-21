@@ -145,7 +145,9 @@ export function createTauriWebview({ host, url }) {
       window.removeEventListener('resize', syncBounds);
       unWebEvent.then((u) => u());
       unEvalResult.then((u) => u());
-      invoke('web_destroy', { label }).catch(() => {});
+      // Wait for any in-flight create to settle before destroying, otherwise a
+      // webview created just after destroy() would be orphaned (audit #4).
+      ready.finally(() => invoke('web_destroy', { label }).catch(() => {}));
     },
   };
 }

@@ -66,6 +66,8 @@
     "allow-ocr-image",
     "allow-shot-open",
     "allow-shot-payload",
-    "allow-gif-frames"
+    "allow-gif-frames",
+    "allow-autosave-board",
+    "allow-load-autosave-board"
   ]
 }

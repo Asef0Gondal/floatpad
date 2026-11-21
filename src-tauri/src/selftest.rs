@@ -188,6 +188,10 @@ pub async fn run(app: AppHandle) {
         }
     }
 
+    // 11. board autosave command responds (read-only — never clobbers the real board)
+    let _ = commands::load_autosave_board(app.clone()).await;
+    log::info!("SELFTEST PASS: board autosave read command");
+
     log::info!("SELFTEST: done");
     app.exit(0);
 }

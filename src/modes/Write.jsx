@@ -82,9 +82,15 @@ export default function Write({ active }) {
   // ── Autosave ──────────────────────────────────────────────
   useEffect(() => {
     const save = () => { try { localStorage.setItem(AUTOSAVE_KEY, content); } catch {} };
-    const t = setTimeout(save, 1000);
-    window.addEventListener('beforeunload', save);
-    return () => { clearTimeout(t); window.removeEventListener('beforeunload', save); };
+    const t = setTimeout(save, 500);
+    const onVis = () => { if (document.visibilityState === 'hidden') save(); };
+    window.addEventListener('blur', save);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('blur', save);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [content]);
 
   // ── Mode persist ──────────────────────────────────────────

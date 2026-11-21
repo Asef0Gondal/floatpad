@@ -72,3 +72,43 @@ describe('toggleTaskAtIndex', () => {
     expect(toggleTaskAtIndex('', 0)).toBe('');
   });
 });
+
+describe('toggleTaskAtIndex — code blocks & blockquotes (audit #1)', () => {
+  it('ignores task-like lines inside fenced code blocks', async () => {
+    const { toggleTaskAtIndex } = await import('../src/utils/helpers');
+    const md = '- [ ] real one\n- [x] real two\n\n```\n- [ ] fake in code\n- [ ] another fake\n```\n\n- [ ] real three';
+    // 3 real checkboxes; index 2 must flip "real three", not a code-block line
+    const out = toggleTaskAtIndex(md, 2);
+    expect(out).toContain('- [x] real three');
+    expect(out).toContain('- [ ] fake in code'); // untouched
+    expect(out).toContain('- [ ] another fake'); // untouched
+  });
+  it('handles tilde fences and blockquoted tasks', async () => {
+    const { toggleTaskAtIndex } = await import('../src/utils/helpers');
+    const md = '> - [ ] quoted task\n\n~~~\n- [ ] fake\n~~~\n- [ ] plain';
+    expect(toggleTaskAtIndex(md, 0)).toContain('> - [x] quoted task');
+    expect(toggleTaskAtIndex(md, 1)).toContain('- [x] plain');
+    expect(toggleTaskAtIndex(md, 1)).toContain('- [ ] fake');
+  });
+});
+
+describe('board autosave round-trip (audit #2/#5)', () => {
+  it('preserves all image fields through JSON + normalize', async () => {
+    const { normalizeImageModel } = await import('../src/utils/helpers');
+    const img = { id: 7, src: 'data:image/png;base64,AA', x: 10, y: 20, w: 100, h: 80,
+      origW: 100, origH: 80, flipX: true, flipY: false, rotation: 90, opacity: 0.5,
+      z: 3, gray: true, pixelated: true, comment: 'note', source: '/Volumes/x/a.png', locked: true };
+    const restored = JSON.parse(JSON.stringify({ images: [img] })).images.map(normalizeImageModel)[0];
+    expect(restored).toMatchObject(img);
+  });
+  it('fills defaults for a minimal record', async () => {
+    const { normalizeImageModel } = await import('../src/utils/helpers');
+    const r = normalizeImageModel({ id: 1, src: 'x', x: 0, y: 0, w: 10, h: 10 }, 5);
+    expect(r.opacity).toBe(1);
+    expect(r.z).toBe(5);
+    expect(r.gray).toBe(false);
+    expect(r.pixelated).toBe(false);
+    expect(r.comment).toBe('');
+    expect(r.source).toBeNull();
+  });
+});

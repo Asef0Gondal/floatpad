@@ -12,7 +12,7 @@ import {
   IconSave,
   IconTrash,
 } from '../components/Icons';
-import { loadImageDimensions, scaleToFit, fileToDataUrl, uid, ensureUidAbove } from '../utils/helpers';
+import { loadImageDimensions, scaleToFit, fileToDataUrl, uid, ensureUidAbove, normalizeImageModel } from '../utils/helpers';
 import {
   alignImages, distributeImages, normalizeImages, stackImages, packImages, duplicateImages,
 } from '../utils/boardArrange';
@@ -327,17 +327,6 @@ function isPointInsideAnnotation(annotation, point) {
   );
 }
 
-function normalizeImageModel(image, index = 0) {
-  return {
-    ...image,
-    opacity: image.opacity ?? 1,
-    z: image.z ?? index,
-    gray: image.gray ?? false,
-    source: image.source ?? null,
-    pixelated: image.pixelated ?? false,
-    comment: image.comment ?? '',
-  };
-}
 
 // PureRef's grayscale formula, applied pixel-wise (canvas filter isn't universal)
 function toGrayscaleCanvas(source, w, h) {
@@ -356,16 +345,8 @@ function toGrayscaleCanvas(source, w, h) {
   return c;
 }
 
-const BOARD_KEY = 'fp_board_autosave';
 const boardParams = new URLSearchParams(window.location.search);
 const isMainBoard = !boardParams.has('panel') && !boardParams.has('shot');
-function loadSavedBoard() {
-  if (!isMainBoard) return null;
-  try {
-    const p = JSON.parse(localStorage.getItem(BOARD_KEY));
-    return p && typeof p === 'object' ? p : null;
-  } catch { return null; }
-}
 
 export default function ImageBoard({ active }) {
   const boardRef = useRef(null);
@@ -378,10 +359,10 @@ export default function ImageBoard({ active }) {
   const pickerRef = useRef(false);
   const spaceHeldRef = useRef(false);
 
-  const savedBoard = useRef(loadSavedBoard()).current;
-  const [images, setImages] = useState(() => (savedBoard?.images || []).map(normalizeImageModel));
-  const [notes, setNotes] = useState(() => savedBoard?.notes || []);
-  const [annotations, setAnnotations] = useState(() => savedBoard?.annotations || []);
+  const boardLoaded = useRef(false);
+  const [images, setImages] = useState([]);
+  const [notes, setNotes] = useState([]);
+  const [annotations, setAnnotations] = useState([]);
   const [selected, setSelected] = useState(new Set());
   const [dragOver, setDragOver] = useState(false);
   const [zoom, setZoom] = useState(100);
@@ -409,24 +390,43 @@ export default function ImageBoard({ active }) {
   useEffect(() => { annotationsRef.current = annotations; }, [annotations]);
   useEffect(() => { pickerRef.current = pickerMode; }, [pickerMode]);
 
-  // Keep new ids above any restored from the autosaved board
+  // Restore the autosaved board from disk (main window only), once.
   useEffect(() => {
-    if (!savedBoard) return;
-    const ids = [...(savedBoard.images || []), ...(savedBoard.notes || []), ...(savedBoard.annotations || [])]
-      .map(i => i.id).filter(n => typeof n === 'number');
-    ensureUidAbove(Math.max(0, ...ids));
+    if (!isMainBoard) { boardLoaded.current = true; return; }
+    ipcRenderer.invoke('board-autosave-read').then(raw => {
+      if (raw) {
+        try {
+          const p = JSON.parse(raw);
+          const imgs = (p.images || []).map(normalizeImageModel);
+          setImages(imgs);
+          setNotes(p.notes || []);
+          setAnnotations(p.annotations || []);
+          const ids = [...imgs, ...(p.notes || []), ...(p.annotations || [])]
+            .map(i => i.id).filter(n => typeof n === 'number');
+          ensureUidAbove(Math.max(0, ...ids));
+        } catch { /* corrupt autosave — start empty */ }
+      }
+      boardLoaded.current = true;
+    }).catch(() => { boardLoaded.current = true; });
   }, []);
 
-  // #3: autosave the board (debounced) so quitting never loses work
+  // Autosave to a Rust-written file (no quota ceiling): debounced while editing,
+  // flushed on blur / tab-hide so quitting never loses work.
   useEffect(() => {
     if (!isMainBoard) return undefined;
     const save = () => {
-      try { localStorage.setItem(BOARD_KEY, JSON.stringify({ images, notes, annotations })); }
-      catch { console.warn('FloatPad: board autosave skipped (storage full) — use Save for large boards'); }
+      if (!boardLoaded.current) return; // don't clobber before the restore lands
+      ipcRenderer.invoke('board-autosave-write', JSON.stringify({ images, notes, annotations })).catch(() => {});
     };
-    const t = setTimeout(save, 800);
-    window.addEventListener('beforeunload', save);
-    return () => { clearTimeout(t); window.removeEventListener('beforeunload', save); };
+    const t = setTimeout(save, 400);
+    const onVis = () => { if (document.visibilityState === 'hidden') save(); };
+    window.addEventListener('blur', save);
+    document.addEventListener('visibilitychange', onVis);
+    return () => {
+      clearTimeout(t);
+      window.removeEventListener('blur', save);
+      document.removeEventListener('visibilitychange', onVis);
+    };
   }, [images, notes, annotations]);
 
   useEffect(() => {

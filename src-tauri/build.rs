@@ -36,6 +36,8 @@ fn main() {
                 "shot_open",
                 "shot_payload",
                 "gif_frames",
+                "autosave_board",
+                "load_autosave_board",
             ]),
         ),
     )
