@@ -598,24 +598,6 @@ textarea { -webkit-user-select:text; user-select:text; }
 }
 .vdz-btn--primary:hover { filter:brightness(1.1); }
 
-.vdz-url-row { display:flex; gap:5px; width:100%; max-width:360px; }
-.vdz-url-input {
-  flex:1; background:var(--fp-bg-raised);
-  border:1px solid var(--fp-border-mid);
-  color:var(--fp-text-dim); padding:7px 12px;
-  border-radius:7px; outline:none; font-size:12px;
-  transition:border-color .1s, color .1s;
-}
-.vdz-url-input:focus { border-color:var(--fp-accent); color:var(--fp-text); }
-.vdz-url-input::placeholder { color:var(--fp-text-faint); }
-.vdz-url-go {
-  background:var(--fp-bg-raised); border:1px solid var(--fp-border-mid);
-  color:var(--fp-text-dim); padding:7px 11px;
-  border-radius:7px; cursor:pointer; font-size:13px;
-  transition:all .1s;
-}
-.vdz-url-go:hover { color:var(--fp-text); background:var(--fp-bg-hover); }
-
 /* Video viewer */
 .video-viewer       { display:none; flex:1; flex-direction:column; min-height:0; }
 .video-viewer.active{ display:flex; }

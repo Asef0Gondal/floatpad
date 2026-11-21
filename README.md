@@ -39,7 +39,7 @@ Built for video editors, designers and developers who need a second screen that 
 | Mode | What it does |
 | --- | --- |
 | **Board** | Infinite canvas for images, annotations, sticky notes and screenshots |
-| **Video** | Local files or direct URLs, with A-B loop, frame stepping and frame grabbing |
+| **Video** | Local files with A-B loop, frame stepping and frame grabbing (use Web mode for online video) |
 | **Web** | A real Chromium browser with bookmarks, reader mode and image-to-Board actions |
 | **Write** | Screenplay-format or Markdown writing pad with autosave and a focus timer |
 
@@ -62,7 +62,7 @@ Built for video editors, designers and developers who need a second screen that 
 
 ### Video
 
-- Open a local video file or paste a direct video URL
+- Open a local video file (browse or drag-drop); for online video use the Web mode
 - Full transport: play/pause, seek, volume, mute, frame-by-frame stepping, `0.25×–2×` speed
 - **A-B loop** for repeating a section while following along
 - **Grab frame → Board** to keep a still reference next to your work

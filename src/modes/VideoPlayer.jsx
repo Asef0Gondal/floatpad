@@ -17,7 +17,6 @@ export default function VideoPlayer({ active, potato }) {
   const [volume,    setVolume]    = useState(() => parseFloat(localStorage.getItem('fp_vol') || '0.85'));
   const [speed,     setSpeed]     = useState(() => parseFloat(localStorage.getItem('fp_speed') || '1'));
   const [dragOver,  setDragOver]  = useState(false);
-  const [urlInput,  setUrlInput]  = useState('');
   const [abA,       setAbA]       = useState(null);
   const [abB,       setAbB]       = useState(null);
 
@@ -59,7 +58,7 @@ export default function VideoPlayer({ active, potato }) {
     if (!v) return;
     v.pause(); v.src = '';
     setLoaded(false); setPlaying(false); setTime(0); setDuration(0);
-    setAbA(null); setAbB(null); setUrlInput('');
+    setAbA(null); setAbB(null);
     abRef.current = { a: null, b: null };
   }, []);
 
@@ -182,8 +181,6 @@ export default function VideoPlayer({ active, potato }) {
     } catch (e) { console.warn('PiP not supported:', e.message); }
   }, []);
 
-  const goUrl = () => { const u = urlInput.trim(); if (u) loadSrc(u); };
-
   const onDragEnter = e => { e.preventDefault(); setDragOver(true); };
   const onDragLeave = e => { if (!e.currentTarget.contains(e.relatedTarget)) setDragOver(false); };
   const onDragOver  = e => e.preventDefault();
@@ -205,14 +202,6 @@ export default function VideoPlayer({ active, potato }) {
           <div className="vdz-buttons">
             <button className="vdz-btn vdz-btn--primary" onClick={openDialog}>Browse files</button>
           </div>
-        </div>
-        <div className="vdz-url-row">
-          <input className="vdz-url-input" type="text"
-            placeholder="or paste a direct video URL"
-            value={urlInput} onChange={e=>setUrlInput(e.target.value)}
-            onKeyDown={e=>e.key==='Enter'&&goUrl()}
-          />
-          <button className="vdz-url-go" onClick={goUrl}>↵</button>
         </div>
       </div>
 
