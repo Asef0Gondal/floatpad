@@ -62,6 +62,15 @@ pub async fn run(app: AppHandle) {
     let size = win.inner_size().unwrap().to_logical::<u32>(scale);
     check!(size.width == 500 && size.height == 400, "resize 500x400 (got {}x{})", size.width, size.height);
 
+    // 4b. always-on-bottom (wallpaper mode) + window lock
+    commands::win_always_bottom(app.clone(), true).await;
+    check!(!win.is_always_on_top().unwrap_or(true), "always-bottom clears always-on-top");
+    commands::win_always_bottom(app.clone(), false).await;
+    check!(win.is_always_on_top().unwrap_or(false), "always-bottom restore re-enables always-on-top");
+    commands::win_lock(app.clone(), true).await;
+    commands::win_lock(app.clone(), false).await;
+    log::info!("SELFTEST PASS: window lock toggle (no trap)");
+
     // 5. screenshot overlay lifecycle (created hidden in selftest)
     commands::open_screenshot(&app);
     let a = app.clone();

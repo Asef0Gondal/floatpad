@@ -132,6 +132,61 @@ pub async fn win_detach(app: AppHandle, on: bool) {
     }
 }
 
+/// PureRef-style "interactable wallpaper": stay below every other window.
+#[tauri::command]
+pub async fn win_always_bottom(app: AppHandle, on: bool) {
+    if let Some(w) = main_win(&app) {
+        if on {
+            let _ = w.set_always_on_top(false);
+        }
+        let _ = w.set_always_on_bottom(on);
+        if !on {
+            let _ = w.set_always_on_top(true);
+        }
+    }
+}
+
+/// Lock the window in place so it can't be dragged accidentally (PureRef ⌘W).
+#[tauri::command]
+pub async fn win_lock(app: AppHandle, on: bool) {
+    if let Some(w) = main_win(&app) {
+        let _ = platform::set_movable(&w.as_ref().window(), !on);
+    }
+}
+
+/// Reveal a local file in Finder / Explorer / the Linux file manager.
+#[tauri::command]
+pub async fn reveal_path(path: String) {
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open").arg("-R").arg(&path).spawn();
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("explorer").arg(format!("/select,{path}")).spawn();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    {
+        let parent = std::path::Path::new(&path).parent().map(|p| p.to_path_buf());
+        if let Some(dir) = parent {
+            let _ = std::process::Command::new("xdg-open").arg(dir).spawn();
+        }
+    }
+}
+
+/// Open an http(s) URL in the default browser (board "open source" for web images).
+#[tauri::command]
+pub async fn open_external(url: String) {
+    let Ok(parsed) = url::Url::parse(&url) else { return };
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return;
+    }
+    #[cfg(target_os = "macos")]
+    let _ = std::process::Command::new("open").arg(&url).spawn();
+    #[cfg(target_os = "windows")]
+    let _ = std::process::Command::new("rundll32")
+        .args(["url.dll,FileProtocolHandler", &url])
+        .spawn();
+    #[cfg(all(unix, not(target_os = "macos")))]
+    let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+}
+
 #[tauri::command]
 pub fn win_mini_toggle(app: AppHandle, state: State<'_, MiniState>) {
     let Some(win) = main_win(&app) else { return };

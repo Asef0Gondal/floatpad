@@ -11,7 +11,10 @@ import {
   IconSave,
   IconTrash,
 } from '../components/Icons';
-import { loadImageDimensions, scaleToFit, fileToDataUrl, uid } from '../utils/helpers';
+import { loadImageDimensions, scaleToFit, fileToDataUrl, uid, ensureUidAbove } from '../utils/helpers';
+import {
+  alignImages, distributeImages, normalizeImages, stackImages, packImages, duplicateImages,
+} from '../utils/boardArrange';
 
 import { ipcRenderer } from '../ipc';
 
@@ -324,7 +327,26 @@ function normalizeImageModel(image, index = 0) {
     ...image,
     opacity: image.opacity ?? 1,
     z: image.z ?? index,
+    gray: image.gray ?? false,
+    source: image.source ?? null,
   };
+}
+
+// PureRef's grayscale formula, applied pixel-wise (canvas filter isn't universal)
+function toGrayscaleCanvas(source, w, h) {
+  const c = document.createElement('canvas');
+  c.width = Math.max(1, Math.round(w));
+  c.height = Math.max(1, Math.round(h));
+  const ctx = c.getContext('2d');
+  ctx.drawImage(source, 0, 0, c.width, c.height);
+  const data = ctx.getImageData(0, 0, c.width, c.height);
+  const px = data.data;
+  for (let i = 0; i < px.length; i += 4) {
+    const v = (px[i] * 11 + px[i + 1] * 16 + px[i + 2] * 5) / 32;
+    px[i] = v; px[i + 1] = v; px[i + 2] = v;
+  }
+  ctx.putImageData(data, 0, 0);
+  return c;
 }
 
 export default function ImageBoard({ active }) {
@@ -352,6 +374,12 @@ export default function ImageBoard({ active }) {
   const [strokeWidth, setStrokeWidth] = useState(() => Number(localStorage.getItem('fp_board_width') || 4));
   const [draftAnnotation, setDraftAnnotation] = useState(null);
   const [editingTextId, setEditingTextId] = useState(null);
+  const [focusId, setFocusId] = useState(null);
+  const [slideshow, setSlideshow] = useState(false);
+  const [showArrange, setShowArrange] = useState(false);
+  const focusRef = useRef(null);
+  const preFocusTf = useRef(null);
+  const arrangeRef = useRef(null);
 
   useEffect(() => { imagesRef.current = images; }, [images]);
   useEffect(() => { notesRef.current = notes; }, [notes]);
@@ -383,7 +411,7 @@ export default function ImageBoard({ active }) {
     return { x: (cx - r.left - tx) / scale, y: (cy - r.top - ty) / scale };
   }, []);
 
-  const addImage = useCallback(async (src, dropCx, dropCy) => {
+  const addImage = useCallback(async (src, dropCx, dropCy, source = null) => {
     try {
       const { w: nw, h: nh } = await loadImageDimensions(src);
       const { w, h } = scaleToFit(nw, nh, 380);
@@ -405,6 +433,7 @@ export default function ImageBoard({ active }) {
         normalizeImageModel({
           id: uid(),
           src,
+          source,
           x,
           y,
           w,
@@ -442,7 +471,7 @@ export default function ImageBoard({ active }) {
     const paths = await ipcRenderer.invoke('dialog-open-images');
     for (const filePath of paths) {
       const dataUrl = await fileToDataUrl(filePath, ipcRenderer);
-      if (dataUrl) await addImage(dataUrl, null, null);
+      if (dataUrl) await addImage(dataUrl, null, null, filePath);
     }
   }, [addImage]);
 
@@ -934,6 +963,108 @@ export default function ImageBoard({ active }) {
     });
   }, [selected]);
 
+  // ── Arrange / transform (PureRef parity) ──────────────────
+  const targetIds = useCallback(() => (
+    selected.size ? selected : new Set(imagesRef.current.map(i => i.id))
+  ), [selected]);
+
+  const applyArrange = useCallback((fn, ...args) => {
+    setImages(prev => fn(prev, targetIds(), ...args));
+    setShowArrange(false);
+  }, [targetIds]);
+
+  const packToView = useCallback((orderIds = null) => {
+    const r = boardRef.current.getBoundingClientRect();
+    const { scale } = tf.current;
+    setImages(prev => packImages(prev, targetIds(), r.width / scale, r.height / scale, orderIds));
+    setShowArrange(false);
+  }, [targetIds]);
+
+  const duplicateSelection = useCallback(() => {
+    const ids = selected.size ? selected : new Set(imagesRef.current.map(i => i.id));
+    if (!ids.size) return;
+    setImages(prev => {
+      const { images: next, newIds } = duplicateImages(prev, ids);
+      setSelected(new Set(newIds));
+      return next;
+    });
+  }, [selected]);
+
+  const setSelectionGray = useCallback(gray => {
+    const ids = targetIds();
+    setImages(prev => prev.map(i => (ids.has(i.id) ? { ...i, gray } : i)));
+  }, [targetIds]);
+
+  const resetTransform = useCallback(id => {
+    setImages(prev => prev.map(i => (
+      i.id === id
+        ? { ...i, flipX: false, flipY: false, rotation: 0, gray: false, opacity: 1 }
+        : i
+    )));
+  }, []);
+
+  const openSource = useCallback(img => {
+    if (!img.source) return;
+    if (/^https?:\/\//i.test(img.source)) {
+      ipcRenderer.invoke('open-external', img.source);
+    } else {
+      ipcRenderer.invoke('reveal-path', img.source);
+    }
+  }, []);
+
+  // ── Focus mode + slideshow (PureRef's most-used flow) ─────
+  const enterFocus = useCallback(id => {
+    const img = imagesRef.current.find(i => i.id === id);
+    if (!img || !boardRef.current) return;
+    if (!focusRef.current) preFocusTf.current = { ...tf.current };
+    const r = boardRef.current.getBoundingClientRect();
+    const pad = 60;
+    const scale = Math.max(0.04, Math.min((r.width - pad * 2) / img.w, (r.height - pad * 2) / img.h, 8));
+    tf.current = {
+      tx: (r.width - img.w * scale) / 2 - img.x * scale,
+      ty: (r.height - img.h * scale) / 2 - img.y * scale,
+      scale,
+    };
+    applyTf();
+    focusRef.current = id;
+    setFocusId(id);
+  }, [applyTf]);
+
+  const exitFocus = useCallback(() => {
+    if (!focusRef.current) return;
+    focusRef.current = null;
+    setFocusId(null);
+    setSlideshow(false);
+    if (preFocusTf.current) {
+      tf.current = preFocusTf.current;
+      preFocusTf.current = null;
+      applyTf();
+    }
+  }, [applyTf]);
+
+  const stepFocus = useCallback(dir => {
+    const ordered = [...imagesRef.current].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+    if (!ordered.length) return;
+    const idx = ordered.findIndex(i => i.id === focusRef.current);
+    const next = ordered[(idx + dir + ordered.length) % ordered.length];
+    enterFocus(next.id);
+  }, [enterFocus]);
+
+  useEffect(() => {
+    if (!slideshow || !focusId) return undefined;
+    const t = setInterval(() => stepFocus(1), 5000);
+    return () => clearInterval(t);
+  }, [slideshow, focusId, stepFocus]);
+
+  // Close the arrange menu on outside click
+  useEffect(() => {
+    const h = e => {
+      if (arrangeRef.current && !arrangeRef.current.contains(e.target)) setShowArrange(false);
+    };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
+
   const exportBoardImage = useCallback(async (format) => {
     const bounds = getBoardBounds(imagesRef.current, notesRef.current, annotationsRef.current);
     if (!bounds) {
@@ -968,7 +1099,8 @@ export default function ImageBoard({ active }) {
     const orderedImages = [...imagesRef.current].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
     for (const image of orderedImages) {
       try {
-        const source = await createImageElement(image.src);
+        const loaded = await createImageElement(image.src);
+        const source = image.gray ? toGrayscaleCanvas(loaded, image.w, image.h) : loaded;
         const cx = image.x + image.w / 2 + offsetX;
         const cy = image.y + image.h / 2 + offsetY;
         ctx.save();
@@ -1064,7 +1196,38 @@ export default function ImageBoard({ active }) {
         zoomToFit();
       }
 
+      // ⌘D duplicate (PureRef)
+      if ((e.metaKey || e.ctrlKey) && e.key === 'd' && document.activeElement === document.body) {
+        e.preventDefault();
+        duplicateSelection();
+      }
+
+      // F focus selection · ←/→ step in focus mode (PureRef)
+      if (e.key === 'f' && !e.metaKey && !e.ctrlKey && document.activeElement === document.body) {
+        const first = selected.size
+          ? imagesRef.current.find(i => selected.has(i.id))
+          : imagesRef.current[0];
+        if (first) enterFocus(first.id);
+      }
+      if (focusRef.current && (e.key === 'ArrowRight' || e.key === 'ArrowLeft')) {
+        e.preventDefault();
+        setSlideshow(false);
+        stepFocus(e.key === 'ArrowRight' ? 1 : -1);
+      }
+
+      // ⌥G grayscale selection (PureRef)
+      if (e.altKey && e.key === 'g' && document.activeElement === document.body) {
+        e.preventDefault();
+        const ids = selected.size ? selected : new Set(imagesRef.current.map(i => i.id));
+        const anyColor = imagesRef.current.some(i => ids.has(i.id) && !i.gray);
+        setSelectionGray(anyColor);
+      }
+
       if (e.key === 'Escape') {
+        if (focusRef.current) {
+          exitFocus();
+          return;
+        }
         setSelected(new Set());
         setDraftAnnotation(null);
         setEditingTextId(null);
@@ -1082,7 +1245,7 @@ export default function ImageBoard({ active }) {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [active, selected, zoomToFit]);
+  }, [active, selected, zoomToFit, duplicateSelection, enterFocus, exitFocus, stepFocus, setSelectionGray]);
 
   const onDrop = async e => {
     e.preventDefault();
@@ -1099,7 +1262,7 @@ export default function ImageBoard({ active }) {
       const uriList = e.dataTransfer.getData('text/uri-list');
       if (uriList) {
         for (const url of uriList.split('\n').filter(url => url && !url.startsWith('#'))) {
-          await addImage(url.trim(), cx, cy);
+          await addImage(url.trim(), cx, cy, url.trim());
         }
       }
     }
@@ -1136,6 +1299,10 @@ export default function ImageBoard({ active }) {
     if (!raw) return;
     try {
       const parsed = JSON.parse(raw);
+      const allIds = [
+        ...(parsed.images || []), ...(parsed.notes || []), ...(parsed.annotations || []),
+      ].map(i => i.id).filter(id => typeof id === 'number');
+      ensureUidAbove(Math.max(0, ...allIds));
       setImages((parsed.images || []).map(normalizeImageModel));
       setNotes(parsed.notes || []);
       setAnnotations(parsed.annotations || []);
@@ -1400,6 +1567,29 @@ export default function ImageBoard({ active }) {
             <button className="tb-tool" onClick={bringSelectionToFront} title="Bring selected images to front">
               Front
             </button>
+            <button className="tb-tool" onClick={duplicateSelection} title="Duplicate selection  ⌘D">
+              Dup
+            </button>
+            <button
+              className="tb-tool"
+              onClick={() => {
+                const anyColor = images.some(i => selected.has(i.id) && !i.gray);
+                setSelectionGray(anyColor);
+              }}
+              title="Grayscale selection  ⌥G"
+            >
+              ◐ Gray
+            </button>
+            {singleSelectedImage && (
+              <>
+                <button className="tb-tool" onClick={() => enterFocus(singleSelectedImage.id)} title="Focus this image  F · ←/→ to step · Esc to exit">
+                  ⤢ Focus
+                </button>
+                <button className="tb-tool" onClick={() => resetTransform(singleSelectedImage.id)} title="Reset transform">
+                  ⟲ Reset
+                </button>
+              </>
+            )}
             {singleSelectedImage && (
               <label className="tool-colorchip board-width-control" title="Selected image opacity">
                 <span>Opacity</span>
@@ -1434,6 +1624,43 @@ export default function ImageBoard({ active }) {
         )}
 
         <div className="tb-tool-sep"/>
+
+        {images.length > 0 && (
+          <div className="tb-menu-wrap" ref={arrangeRef}>
+            <button className="tb-tool" onClick={() => setShowArrange(s => !s)} title="Arrange, align and normalize images">
+              Arrange ▾
+            </button>
+            {showArrange && (
+              <div className="tb-menu board-arrange-menu">
+                <button className="tb-menu-item" onClick={() => packToView()}><span className="tb-menu-label">Pack optimal</span><span className="tb-menu-sub">fit view</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'left')}><span className="tb-menu-label">Align left</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'right')}><span className="tb-menu-label">Align right</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'top')}><span className="tb-menu-label">Align top</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'bottom')}><span className="tb-menu-label">Align bottom</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'centerH')}><span className="tb-menu-label">Center horizontally</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'centerV')}><span className="tb-menu-label">Center vertically</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(distributeImages, 'h')}><span className="tb-menu-label">Distribute horizontal</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(distributeImages, 'v')}><span className="tb-menu-label">Distribute vertical</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(normalizeImages, 'height')}><span className="tb-menu-label">Normalize height</span><span className="tb-menu-sub">average</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(normalizeImages, 'width')}><span className="tb-menu-label">Normalize width</span><span className="tb-menu-sub">average</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(normalizeImages, 'size')}><span className="tb-menu-label">Normalize size</span><span className="tb-menu-sub">longest side</span></button>
+                <button className="tb-menu-item" onClick={() => applyArrange(stackImages)}><span className="tb-menu-label">Stack</span><span className="tb-menu-sub">pile</span></button>
+                <button className="tb-menu-item" onClick={() => {
+                  const ids = [...targetIds()];
+                  const named = imagesRef.current
+                    .filter(i => ids.includes(i.id))
+                    .sort((a, b) => String(a.source || a.id).localeCompare(String(b.source || b.id)));
+                  packToView(named.map(i => i.id));
+                }}><span className="tb-menu-label">Pack by name</span></button>
+                <button className="tb-menu-item" onClick={() => {
+                  const ids = [...targetIds()];
+                  const byAddition = imagesRef.current.filter(i => ids.includes(i.id)).sort((a, b) => a.id - b.id);
+                  packToView(byAddition.map(i => i.id));
+                }}><span className="tb-menu-label">Pack by addition</span></button>
+              </div>
+            )}
+          </div>
+        )}
 
         <button className="tb-tool" onClick={() => exportBoardImage('png')} title="Export board as PNG">
           <IconSave size={13}/>
@@ -1486,13 +1713,18 @@ export default function ImageBoard({ active }) {
           {sortedImages.map(img => (
             <div
               key={img.id}
-              className={`board-item${img.locked ? ' locked' : ''}${selected.has(img.id) ? ' selected' : ''}`}
+              className={`board-item${img.locked ? ' locked' : ''}${selected.has(img.id) ? ' selected' : ''}${focusId ? (focusId === img.id ? ' focused' : ' dimmed') : ''}`}
               style={{ left: img.x, top: img.y, width: img.w, height: img.h }}
               ref={el => {
                 if (el) itemElsRef.current[img.id] = el;
               }}
               onMouseDown={e => startItemDrag(e, img.id)}
               onClick={e => onImageClick(e, img)}
+              onDoubleClick={e => {
+                if (tool !== 'select' || pickerMode) return;
+                e.stopPropagation();
+                focusId === img.id ? exitFocus() : enterFocus(img.id);
+              }}
             >
               {!pickerMode && !img.locked && tool === 'select' && (
                 <div
@@ -1516,6 +1748,7 @@ export default function ImageBoard({ active }) {
                 style={{
                   opacity: img.opacity ?? 1,
                   transform: `scaleX(${img.flipX ? -1 : 1}) scaleY(${img.flipY ? -1 : 1}) rotate(${img.rotation || 0}deg)`,
+                  filter: img.gray ? 'grayscale(1)' : undefined,
                   cursor: pickerMode ? 'crosshair' : undefined,
                 }}
               />
@@ -1575,6 +1808,40 @@ export default function ImageBoard({ active }) {
                     >
                       ↻
                     </button>
+                    <button
+                      className="bia-btn"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setImages(prev => prev.map(image => (
+                          image.id === img.id ? { ...image, gray: !image.gray } : image
+                        )));
+                      }}
+                      title="Toggle grayscale (⌥G on selection)"
+                    >
+                      ◐
+                    </button>
+                    <button
+                      className="bia-btn"
+                      onClick={e => {
+                        e.stopPropagation();
+                        resetTransform(img.id);
+                      }}
+                      title="Reset transform (flip, rotation, grayscale, opacity)"
+                    >
+                      ⟲
+                    </button>
+                    {img.source && (
+                      <button
+                        className="bia-btn"
+                        onClick={e => {
+                          e.stopPropagation();
+                          openSource(img);
+                        }}
+                        title="Open source location"
+                      >
+                        ⌂
+                      </button>
+                    )}
                     <button
                       className="bia-btn bia-lock"
                       onClick={e => {
@@ -1644,6 +1911,20 @@ export default function ImageBoard({ active }) {
 
         {rubberBand && rbStyle && (
           <div className="rubber-band" style={rbStyle}/>
+        )}
+
+        {focusId && (
+          <div className="focus-bar">
+            <button className="focus-btn" onClick={() => { setSlideshow(false); stepFocus(-1); }} title="Previous image  ←">◀</button>
+            <span className="focus-count">
+              {[...images].sort((a, b) => (a.z ?? 0) - (b.z ?? 0)).findIndex(i => i.id === focusId) + 1} / {images.length}
+            </span>
+            <button className="focus-btn" onClick={() => { setSlideshow(false); stepFocus(1); }} title="Next image  →">▶</button>
+            <button className={`focus-btn${slideshow ? ' on' : ''}`} onClick={() => setSlideshow(s => !s)} title="Auto-advance every 5s">
+              {slideshow ? '⏸ Pause' : '▶ Slideshow'}
+            </button>
+            <button className="focus-btn" onClick={exitFocus} title="Exit focus  Esc">✕ Exit</button>
+          </div>
         )}
 
         {images.length === 0 && notes.length === 0 && annotations.length === 0 && !draftAnnotation && (

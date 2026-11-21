@@ -106,6 +106,10 @@ const JS_INVOKE = {
 
 // invoke() channels served by Rust
 const RUST_INVOKE = {
+  'reveal-path': ['reveal_path', (path) => ({ path })],
+  'open-external': ['open_external', (url) => ({ url })],
+  'win-always-bottom': ['win_always_bottom', (on) => ({ on })],
+  'win-lock': ['win_lock', (on) => ({ on })],
   'capture-screen': ['capture_screen', () => ({})],
   'capture-webview-rect': ['capture_webview_rect', (label, rect) => ({ label, rect })],
   'adblock-site-status': ['adblock_site_status', (url) => ({ url })],

@@ -63,6 +63,23 @@ pub fn read_state(_win: &Window) -> (f64, bool) {
     (1.0, false)
 }
 
+/// Lock/unlock window dragging (PureRef "Lock window").
+#[cfg(target_os = "macos")]
+pub fn set_movable(win: &Window, movable: bool) -> tauri::Result<()> {
+    use objc2_app_kit::NSWindow;
+    let ptr = win.ns_window()? as usize;
+    let _ = win.run_on_main_thread(move || unsafe {
+        (*(ptr as *mut NSWindow)).setMovable(movable);
+    });
+    Ok(())
+}
+
+// shortcut: Windows/Linux window-move locking needs subclassing/hooking; no-op for now
+#[cfg(not(target_os = "macos"))]
+pub fn set_movable(_win: &Window, _movable: bool) -> tauri::Result<()> {
+    Ok(())
+}
+
 /// Visible on every Space, including over full-screen apps (v1: setVisibleOnAllWorkspaces).
 pub fn decorate(win: &Window) {
     #[cfg(target_os = "macos")]

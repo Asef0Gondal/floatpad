@@ -52,6 +52,8 @@ export default function App() {
   const [potato,     setPotato]     = useState(false);
   const [miniMode,   setMiniMode]   = useState(false);
   const [detached,   setDetached]   = useState(false);
+  const [winLocked,  setWinLocked]  = useState(false);
+  const [winBottom,  setWinBottom]  = useState(false);
   const [showSizes,  setShowSizes]  = useState(false);
   const [showKeys,   setShowKeys]   = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
@@ -142,6 +144,14 @@ export default function App() {
   const toggleDetach = useCallback(() => {
     const next = !detached; setDetached(next); ipcRenderer.send('win-detach', next);
   }, [detached]);
+
+  const toggleWinLock = useCallback(() => {
+    const next = !winLocked; setWinLocked(next); ipcRenderer.invoke('win-lock', next);
+  }, [winLocked]);
+
+  const toggleWinBottom = useCallback(() => {
+    const next = !winBottom; setWinBottom(next); ipcRenderer.invoke('win-always-bottom', next);
+  }, [winBottom]);
 
   const toggleMini = useCallback(() => {
     ipcRenderer.send('win-mini-toggle');
@@ -238,6 +248,20 @@ export default function App() {
             onClick={toggleDetach}
             title={detached?'Detached — click to restore':'Detach — click-through'}>
             <IconDetach size={14}/>
+          </button>
+
+          {/* Lock window position (PureRef ⌘W) */}
+          <button className={`tb-btn${winLocked?' on':''}`}
+            onClick={toggleWinLock}
+            title={winLocked?'Unlock window position':'Lock window position'}>
+            {winLocked?'🔒':'🔓'}
+          </button>
+
+          {/* Always on bottom — interactable wallpaper (PureRef) */}
+          <button className={`tb-btn${winBottom?' on':''}`}
+            onClick={toggleWinBottom}
+            title={winBottom?'Restore always-on-top':'Always on bottom (wallpaper mode)'}>
+            ⤓
           </button>
 
           {/* Size */}

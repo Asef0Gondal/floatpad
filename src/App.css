@@ -1029,3 +1029,22 @@ kbd {
   padding: 5px 12px; border-radius: 14px; pointer-events: none;
   white-space: nowrap; z-index: 9999;
 }
+
+/* ── Board: focus mode + arrange (PureRef parity) ── */
+.board-item.dimmed { opacity: 0.22; transition: opacity 0.15s; }
+.board-item.focused { outline: 2px solid var(--fp-accent, #4a90e2); outline-offset: 3px; }
+.focus-bar {
+  position: absolute; bottom: 14px; left: 50%; transform: translateX(-50%);
+  display: flex; align-items: center; gap: 6px;
+  background: rgba(14,14,16,0.88); border: 1px solid rgba(255,255,255,0.12);
+  border-radius: 20px; padding: 5px 10px; z-index: 60;
+  backdrop-filter: blur(8px);
+}
+.focus-btn {
+  background: transparent; border: none; color: #ddd; font-size: 12px;
+  padding: 4px 9px; border-radius: 12px; cursor: pointer; white-space: nowrap;
+}
+.focus-btn:hover { background: rgba(255,255,255,0.12); }
+.focus-btn.on { background: var(--fp-accent, #4a90e2); color: #fff; }
+.focus-count { color: #999; font-size: 11px; min-width: 44px; text-align: center; }
+.board-arrange-menu { max-height: 320px; overflow-y: auto; min-width: 190px; }

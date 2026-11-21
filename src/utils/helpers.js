@@ -59,3 +59,6 @@ export async function fileToDataUrl(filePath, ipcRenderer) {
 // Generate a simple unique ID
 let _uid = 0;
 export function uid() { return ++_uid; }
+
+// After loading a saved board, keep new ids above every restored id
+export function ensureUidAbove(n) { if (Number.isFinite(n) && n >= _uid) _uid = n; }
