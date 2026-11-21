@@ -126,6 +126,22 @@ Rules learned from the A-to-Z audit:
 - Rules of Hooks: a conditional `return` before hooks is a latent crash — split
   into a wrapper component (App → AppMain / ShotView).
 
+## v2.1.4 — grab handle, borderless view, second-audit fixes
+
+- **Grab handle + borderless** replicate the old Electron focus-mode design:
+  left-edge handle uses `data-tauri-drag-region="deep"` (bare attribute only
+  drags on the element itself, not its texture child); borderless titlebar is
+  `position:absolute` so content fills the window, revealed by a top hotspot.
+- **TDZ crashes caught by the JS error relay:** a `useEffect` placed before the
+  `useCallback` it references throws "Cannot access X before initialization"
+  (deps array evaluates during render). Order effects after their callbacks.
+  Same bug class hit `gifSelId` referencing `singleSelectedImage` declared later.
+- **Board autosave is file-based** (Rust `autosave_board`/`load_autosave_board`,
+  app-data dir, atomic write, off UI thread) — no localStorage 5 MB ceiling;
+  flushed on blur/visibilitychange because `beforeunload` is unreliable in Tauri.
+- **Task toggle skips fenced code blocks** so preview checkboxes stay aligned
+  with source (marked renders no checkbox inside code fences).
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
