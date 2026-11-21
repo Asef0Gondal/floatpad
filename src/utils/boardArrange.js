@@ -93,9 +93,13 @@ export function stackImages(images, ids) {
 export function packImages(images, ids, viewW, viewH, orderIds = null) {
   const sel = pick(images, ids);
   if (!sel.length) return images;
-  const ordered = orderIds
-    ? [...sel].sort((a, b) => orderIds.indexOf(a.id) - orderIds.indexOf(b.id))
-    : [...sel].sort((a, b) => b.h - a.h);
+  let ordered;
+  if (orderIds) {
+    const rank = new Map(orderIds.map((id, i) => [id, i]));
+    ordered = [...sel].sort((a, b) => (rank.get(a.id) ?? 0) - (rank.get(b.id) ?? 0));
+  } else {
+    ordered = [...sel].sort((a, b) => b.h - a.h);
+  }
 
   const placements = [];
   let x = 0;

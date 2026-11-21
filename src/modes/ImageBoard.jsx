@@ -17,7 +17,7 @@ import {
   alignImages, distributeImages, normalizeImages, stackImages, packImages, duplicateImages,
 } from '../utils/boardArrange';
 
-import { ipcRenderer, isTauri } from '../ipc';
+import { ipcRenderer } from '../ipc';
 import { evalInWebview } from '../utils/tauriWebview';
 
 const EXPORT_PADDING = 48;
@@ -33,26 +33,29 @@ const TOOL_OPTIONS = [
   { id: 'text', label: 'Text', Icon: IconText },
 ];
 
-function sampleColor(src, origW, origH, relX, relY) {
+function sampleColor(src, dispW, dispH, relX, relY, img) {
   return new Promise(resolve => {
     const c = document.createElement('canvas');
-    c.width = origW;
-    c.height = origH;
+    c.width = Math.max(1, Math.round(dispW));
+    c.height = Math.max(1, Math.round(dispH));
     const ctx = c.getContext('2d');
-    const img = new Image();
-    img.crossOrigin = 'anonymous';
-    img.onload = () => {
-      ctx.drawImage(img, 0, 0, origW, origH);
+    const image = new Image();
+    image.crossOrigin = 'anonymous';
+    image.onload = () => {
+      // Replicate the on-screen flip/rotation so the picked pixel matches the cursor.
+      ctx.translate(c.width / 2, c.height / 2);
+      ctx.scale(img.flipX ? -1 : 1, img.flipY ? -1 : 1);
+      ctx.rotate(((img.rotation || 0) * Math.PI) / 180);
+      ctx.drawImage(image, -c.width / 2, -c.height / 2, c.width, c.height);
       const px = ctx.getImageData(
-        Math.round(relX * origW),
-        Math.round(relY * origH),
-        1,
-        1
+        Math.min(c.width - 1, Math.max(0, Math.round(relX * c.width))),
+        Math.min(c.height - 1, Math.max(0, Math.round(relY * c.height))),
+        1, 1
       ).data;
       resolve('#' + [px[0], px[1], px[2]].map(v => v.toString(16).padStart(2, '0')).join(''));
     };
-    img.onerror = () => resolve(null);
-    img.src = src;
+    image.onerror = () => resolve(null);
+    image.src = src;
   });
 }
 
@@ -353,6 +356,17 @@ function toGrayscaleCanvas(source, w, h) {
   return c;
 }
 
+const BOARD_KEY = 'fp_board_autosave';
+const boardParams = new URLSearchParams(window.location.search);
+const isMainBoard = !boardParams.has('panel') && !boardParams.has('shot');
+function loadSavedBoard() {
+  if (!isMainBoard) return null;
+  try {
+    const p = JSON.parse(localStorage.getItem(BOARD_KEY));
+    return p && typeof p === 'object' ? p : null;
+  } catch { return null; }
+}
+
 export default function ImageBoard({ active }) {
   const boardRef = useRef(null);
   const canvasRef = useRef(null);
@@ -364,9 +378,10 @@ export default function ImageBoard({ active }) {
   const pickerRef = useRef(false);
   const spaceHeldRef = useRef(false);
 
-  const [images, setImages] = useState([]);
-  const [notes, setNotes] = useState([]);
-  const [annotations, setAnnotations] = useState([]);
+  const savedBoard = useRef(loadSavedBoard()).current;
+  const [images, setImages] = useState(() => (savedBoard?.images || []).map(normalizeImageModel));
+  const [notes, setNotes] = useState(() => savedBoard?.notes || []);
+  const [annotations, setAnnotations] = useState(() => savedBoard?.annotations || []);
   const [selected, setSelected] = useState(new Set());
   const [dragOver, setDragOver] = useState(false);
   const [zoom, setZoom] = useState(100);
@@ -384,6 +399,7 @@ export default function ImageBoard({ active }) {
   const [ocr, setOcr] = useState(null);
   const [scrapeBusy, setScrapeBusy] = useState(false);
   const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
+  const [commentEdit, setCommentEdit] = useState(null); // {id, text}
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
@@ -392,6 +408,26 @@ export default function ImageBoard({ active }) {
   useEffect(() => { notesRef.current = notes; }, [notes]);
   useEffect(() => { annotationsRef.current = annotations; }, [annotations]);
   useEffect(() => { pickerRef.current = pickerMode; }, [pickerMode]);
+
+  // Keep new ids above any restored from the autosaved board
+  useEffect(() => {
+    if (!savedBoard) return;
+    const ids = [...(savedBoard.images || []), ...(savedBoard.notes || []), ...(savedBoard.annotations || [])]
+      .map(i => i.id).filter(n => typeof n === 'number');
+    ensureUidAbove(Math.max(0, ...ids));
+  }, []);
+
+  // #3: autosave the board (debounced) so quitting never loses work
+  useEffect(() => {
+    if (!isMainBoard) return undefined;
+    const save = () => {
+      try { localStorage.setItem(BOARD_KEY, JSON.stringify({ images, notes, annotations })); }
+      catch { console.warn('FloatPad: board autosave skipped (storage full) — use Save for large boards'); }
+    };
+    const t = setTimeout(save, 800);
+    window.addEventListener('beforeunload', save);
+    return () => { clearTimeout(t); window.removeEventListener('beforeunload', save); };
+  }, [images, notes, annotations]);
 
   useEffect(() => {
     localStorage.setItem('fp_board_tool', tool);
@@ -847,17 +883,21 @@ export default function ImageBoard({ active }) {
     if (!el) return;
     const r = el.getBoundingClientRect();
     const hex = await sampleColor(
-      img.src,
-      img.origW || img.w,
-      img.origH || img.h,
+      img.src, img.w, img.h,
       (e.clientX - r.left) / r.width,
-      (e.clientY - r.top) / r.height
+      (e.clientY - r.top) / r.height,
+      img
     );
     if (hex) {
       setPickedColor(hex);
       setStrokeColor(hex);
       navigator.clipboard.writeText(hex).catch(() => {});
     }
+  }, []);
+
+  const saveComment = useCallback((id, text) => {
+    setImages(prev => prev.map(i => (i.id === id ? { ...i, comment: text } : i)));
+    setCommentEdit(null);
   }, []);
 
   const addNote = useCallback((cx, cy) => {
@@ -1021,7 +1061,6 @@ export default function ImageBoard({ active }) {
 
   // ── Paste a URL → scrape every image off the page (PureRef) ──
   const scrapeUrl = useCallback(async url => {
-    if (!isTauri) { await addImage(url, null, null, url); return; }
     setScrapeBusy(true);
     const label = 'web-scrape';
     try {
@@ -1157,7 +1196,7 @@ export default function ImageBoard({ active }) {
   const exportBoardImage = useCallback(async (format) => {
     const bounds = getBoardBounds(imagesRef.current, notesRef.current, annotationsRef.current);
     if (!bounds) {
-      alert('Nothing to export yet.');
+      ipcRenderer.invoke('dialog-message', 'Nothing to export yet.');
       return;
     }
 
@@ -1415,13 +1454,14 @@ export default function ImageBoard({ active }) {
         applyTf();
       }
     } catch {
-      alert('Could not read board file.');
+      ipcRenderer.invoke('dialog-message', 'Could not read board file.');
     }
   }, [applyTf]);
 
-  const clearBoard = useCallback(() => {
+  const clearBoard = useCallback(async () => {
     if (!imagesRef.current.length && !notesRef.current.length && !annotationsRef.current.length) return;
-    if (window.confirm('Clear everything?')) {
+    const ok = await ipcRenderer.invoke('dialog-ask', 'Clear everything on the board?', 'Clear board');
+    if (ok) {
       setImages([]);
       setNotes([]);
       setAnnotations([]);
@@ -1861,8 +1901,24 @@ export default function ImageBoard({ active }) {
                 }}
               />
 
-              {img.comment && (
+              {img.comment && !commentEdit && (
                 <div className="board-item-comment" title={img.comment}>💬</div>
+              )}
+              {commentEdit?.id === img.id && (
+                <input
+                  className="board-comment-input"
+                  autoFocus
+                  value={commentEdit.text}
+                  placeholder="Comment…"
+                  onMouseDown={e => e.stopPropagation()}
+                  onClick={e => e.stopPropagation()}
+                  onChange={e => setCommentEdit({ id: img.id, text: e.target.value })}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') saveComment(img.id, commentEdit.text);
+                    if (e.key === 'Escape') setCommentEdit(null);
+                  }}
+                  onBlur={() => { if (commentEdit?.id === img.id) saveComment(img.id, commentEdit.text); }}
+                />
               )}
 
               {!pickerMode && tool === 'select' && (
@@ -1990,12 +2046,7 @@ export default function ImageBoard({ active }) {
                       className="bia-btn"
                       onClick={e => {
                         e.stopPropagation();
-                        const c = window.prompt('Comment for this image:', img.comment || '');
-                        if (c !== null) {
-                          setImages(prev => prev.map(image => (
-                            image.id === img.id ? { ...image, comment: c } : image
-                          )));
-                        }
+                        setCommentEdit({ id: img.id, text: img.comment || '' });
                       }}
                       title="Add / edit comment"
                     >

@@ -1,12 +1,8 @@
 import { describe, it, expect, beforeEach } from 'vitest';
 import { readFileSync, readdirSync } from 'node:fs';
-import { ipcRenderer, isTauri } from '../src/ipc';
+import { ipcRenderer } from '../src/ipc';
 
 const calls = () => globalThis.__ipcCalls;
-
-it('detects the Tauri backend', () => {
-  expect(isTauri).toBe(true);
-});
 
 describe('channel → command mapping', () => {
   beforeEach(() => { calls().length = 0; });

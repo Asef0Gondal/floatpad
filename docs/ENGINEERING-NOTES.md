@@ -101,14 +101,39 @@ origin → `origin().ascii_serialization()` = `"null"` → panel URLs became
 configured base (devUrl / tauri://localhost) deterministically, and `Url::join`
 preserves the query string.
 
+## v2.1.2 full-audit fixes (16 findings)
+
+Rules learned from the A-to-Z audit:
+- **WKWebView suppresses `alert`/`confirm`/`prompt`.** wry's UI delegate has no
+  text/alert panels, so `confirm()` returns false and `prompt()` returns null —
+  features built on them silently die. Use the dialog plugin (`ask`/`message`)
+  and inline React inputs. A regression test greps the UI for raw dialogs.
+- **Global-hotkey registration can fail at startup** (another app owns the key).
+  Register in `setup` with log-and-continue, never `?`/`expect` — a conflict
+  must disable one hotkey, not crash the whole app.
+- **Autosave user work.** Board and Write pad persist on a debounce + on
+  `beforeunload`; a reference app that loses content on quit loses trust.
+- **Potato/opacity state:** stash the pre-dim value in a ref; an effect keyed
+  only on the toggle reads the already-dimmed value otherwise (stuck at 70%).
+- **Eyedropper must replicate the on-screen transform** (flip/rotation) before
+  sampling, or it picks the wrong pixel on transformed images.
+- **Clean up handoff payloads on window `Destroyed`**, not only on fetch, or
+  fast-closed windows leak whole images into the map.
+- **Debounce prefs writes** on move/resize (generation-counter delayed task);
+  don't read+write+rename the file on every drag pixel.
+- **Scope file/asset access** to user-data roots ($HOME, /Volumes, temp,
+  app-data) rather than `**`; keeps media working, blocks system files.
+- Rules of Hooks: a conditional `return` before hooks is a latent crash — split
+  into a wrapper component (App → AppMain / ShotView).
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
   (ends with `.app`): changing it would orphan the user's existing prefs and
   WKWebView localStorage (bookmarks, theme, onboarding state).
-- **Electron v1 shell kept** (`npm run start:electron`) until parity is signed
-  off; `src/ipc.js` is a dual-backend shim and the vitest contract test guarantees
-  every channel used by any mode is handled by both backends.
+- **Electron v1 shell retired** (v2.1.2) after the full audit; `src/ipc.js` is
+  Tauri-only and the vitest contract test guarantees every channel used by any
+  mode is handled.
 - **Opacity applies to the calling window** (panels included) — intentionally
   better than v1, where a panel's slider changed the main window.
 - Known remaining gaps: click-through hover forwarding (no Tauri API), Linux

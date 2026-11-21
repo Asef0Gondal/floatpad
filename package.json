@@ -1,8 +1,8 @@
 {
   "name": "floatpad",
   "productName": "FloatPad",
-  "version": "2.1.1",
-  "description": "Lean always-on-top reference pad \u2014 board, video, web and write modes in one floating overlay. Rust/Tauri rewrite of the Electron original.",
+  "version": "2.1.2",
+  "description": "Lean always-on-top reference pad \u2014 board, video, web and write modes in one floating overlay. Native Rust/Tauri.",
   "author": "Asif Gondal",
   "license": "MIT",
   "repository": {
@@ -21,10 +21,8 @@
     "linux",
     "utility"
   ],
-  "main": "public/electron.js",
   "scripts": {
     "dev:vite": "vite",
-    "dev:electron": "cross-env APP_URL=http://localhost:5173 electron .",
     "start": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
     "build": "vite build",
     "dist:mac": "tauri build --bundles app,dmg",
@@ -33,7 +31,6 @@
     "dev": "tauri dev",
     "build:app": "tauri build",
     "dist:linux": "tauri build --bundles deb,appimage",
-    "start:electron": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
     "test": "vitest run",
     "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --lib"
   },
@@ -49,45 +46,8 @@
   "devDependencies": {
     "@tauri-apps/cli": "^2.12.6",
     "@vitejs/plugin-react": "^4.2.1",
-    "concurrently": "^8.2.2",
-    "cross-env": "^7.0.3",
-    "electron": "^28.3.3",
-    "electron-builder": "^24.13.3",
     "vite": "^5.4.0",
-    "vitest": "^4.1.12",
-    "wait-on": "^7.2.0"
-  },
-  "build": {
-    "appId": "com.floatpad.app",
-    "productName": "FloatPad",
-    "asar": true,
-    "directories": {
-      "buildResources": "assets",
-      "output": "release"
-    },
-    "files": [
-      "public/electron.js",
-      "public/screenshot.html",
-      "dist/**/*",
-      "package.json"
-    ],
-    "mac": {
-      "category": "public.app-category.utilities",
-      "icon": "assets/icon.png",
-      "target": [
-        {
-          "target": "dmg",
-          "arch": [
-            "arm64",
-            "x64"
-          ]
-        }
-      ]
-    },
-    "win": {
-      "target": "nsis",
-      "icon": "assets/icon.png"
-    }
+    "vitest": "^4.1.12"
   },
   "engines": {
     "node": ">=18.0.0"

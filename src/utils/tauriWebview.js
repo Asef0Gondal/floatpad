@@ -1,4 +1,4 @@
-// Electron <webview> API surface, backed by a native Tauri child webview.
+// Browser-webview API surface backed by a native Tauri child webview.
 // The webview is positioned over `host` (a plain div) and follows its rect.
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';

@@ -2,14 +2,37 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "Main window and undocked panels: full app IPC",
-  "windows": ["main", "panel-*", "shot-*"],
+  "windows": [
+    "main",
+    "panel-*",
+    "shot-*"
+  ],
   "permissions": [
     "core:default",
     "core:window:allow-start-dragging",
     "dialog:default",
     "drag:default",
     "fs:default",
-    { "identifier": "fs:scope", "allow": [{ "path": "**" }] },
+    {
+      "identifier": "fs:scope",
+      "allow": [
+        {
+          "path": "$HOME/**"
+        },
+        {
+          "path": "/Volumes/**"
+        },
+        {
+          "path": "$TEMP/**"
+        },
+        {
+          "path": "$APPDATA/**"
+        },
+        {
+          "path": "$APPCONFIG/**"
+        }
+      ]
+    },
     "fs:allow-read-file",
     "fs:allow-write-file",
     "fs:allow-read-text-file",

@@ -1193,3 +1193,9 @@ kbd {
   background: rgba(0,0,0,0.55); border-radius: 8px; padding: 1px 5px;
   pointer-events: none;
 }
+
+.board-comment-input {
+  position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 5;
+  background: rgba(0,0,0,0.8); border: 1px solid var(--fp-accent, #4a90e2);
+  border-radius: 6px; color: #fff; font-size: 11px; padding: 4px 7px; outline: none;
+}

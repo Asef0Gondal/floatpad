@@ -10,7 +10,6 @@ marked.setOptions({ gfm: true, breaks: true });
 
 const AUTOSAVE_KEY  = 'fp_write_content';
 const MODE_KEY      = 'fp_write_mode';
-const AUTOSAVE_MS   = 30_000;
 
 // Screenplay element types cycled by Tab
 const SP_TYPES = [
@@ -36,7 +35,6 @@ function estimatePages(text) {
 export default function Write({ active }) {
   const editorRef   = useRef(null);
   const timerRef    = useRef(null);
-  const autosaveRef = useRef(null);
 
   const [writeMode,  setWriteMode]  = useState(() => localStorage.getItem(MODE_KEY) || 'script');
   const [content,    setContent]    = useState(() => localStorage.getItem(AUTOSAVE_KEY) || '');
@@ -83,10 +81,10 @@ export default function Write({ active }) {
 
   // ── Autosave ──────────────────────────────────────────────
   useEffect(() => {
-    autosaveRef.current = setInterval(() => {
-      localStorage.setItem(AUTOSAVE_KEY, content);
-    }, AUTOSAVE_MS);
-    return () => clearInterval(autosaveRef.current);
+    const save = () => { try { localStorage.setItem(AUTOSAVE_KEY, content); } catch {} };
+    const t = setTimeout(save, 1000);
+    window.addEventListener('beforeunload', save);
+    return () => { clearTimeout(t); window.removeEventListener('beforeunload', save); };
   }, [content]);
 
   // ── Mode persist ──────────────────────────────────────────

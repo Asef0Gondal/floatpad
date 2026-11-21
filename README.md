@@ -24,7 +24,7 @@
 
 > FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view. That's the entire origin story.
 >
-> **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app) — a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The original Electron shell still runs (`npm run start:electron`) while the port settles.
+> **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app) — a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The legacy Electron shell was retired in v2.1.2 — Tauri is the only shell.
 
 ## Why FloatPad
 
@@ -148,18 +148,19 @@ FloatPad is a Tauri 2 app: a native Rust core with the system webview rendering 
 - **Rust core** — `src-tauri/src/`: window and panel lifecycle, tray, global shortcuts, opacity/click-through/all-Spaces via platform APIs (`objc2` on macOS, `windows-sys` on Windows), screen capture through `xcap`, persisted window bounds in `prefs.json`, ad-block allowlist.
 - **Embedded browser** — Web mode is a native child webview (Tauri multi-webview) positioned over the app's content area; a main-frame-only injected script reports SPA navigations, context menus and popups back to the shell and hides ad/tracker elements.
 - **Renderer** — React 18 + Vite 5 in `src/`, unchanged from v1: a single `App` shell owns mode switching, themes, opacity, mini/standalone state; each mode is a self-contained component under `src/modes/`.
-- **IPC** — `src/ipc.js` is a dual-backend shim: it speaks Tauri `invoke`/`listen` in v2 and Electron `ipcRenderer` in v1, so every mode keeps the same channel names. File dialogs and file I/O go through the official `dialog`/`fs` plugins; everything window-related is a Rust command.
+- **IPC** — `src/ipc.js` maps the app's channel names onto Tauri `invoke`/`listen`. File dialogs and file I/O go through the official `dialog`/`fs` plugins; everything window-related is a Rust command. Native `alert/confirm/prompt` are avoided (WKWebView suppresses them) in favor of the dialog plugin and inline inputs.
 - **Panel windows** — undocked modes are separate Tauri windows loading the same bundle with `?panel=<mode>`.
-- **Persistence** — window prefs and the ad-block allowlist live in `prefs.json` under the app config dir; board documents are `.floatpad` files; the Write pad, bookmarks and theme autosave to `localStorage`.
+- **Persistence** — window prefs and the ad-block allowlist live in `prefs.json` under the app config dir; the board autosaves to `localStorage` (restored on launch) and can be saved as `.floatpad` files; the Write pad autosaves on edit and on quit; bookmarks, theme and opacity persist too.
 
-### Known differences from the Electron v1
+### Platform notes & limitations
 
 - **Ad blocking** is network-level on macOS (WKContentRuleList, same host list and per-site allowlist as v1) plus ad-element hiding everywhere; on Windows/Linux it is element-level only for now.
 - **OCR** uses the macOS Vision framework; other platforms get a clear message (Windows.Media.Ocr is the planned path).
 - **Window-position lock** is macOS only for now.
 - **Detach (click-through)** does not forward hover events to the window underneath; tray → Show or `⌘⇧Space` always restores control.
 - **Window opacity** is macOS/Windows only for now (no-op on Linux).
-- **Opacity sliders on undocked panels** now affect their own window (v1 always changed the main window).
+- **Opacity sliders on undocked panels** affect their own window.
+- **File/asset access** is scoped to your home folder, `/Volumes`, temp and app-data dirs (not the whole filesystem).
 
 ## Project structure
 
@@ -167,10 +168,9 @@ FloatPad is a Tauri 2 app: a native Rust core with the system webview rendering 
 floatpad/
 ├── assets/                 # app + tray icons
 ├── public/
-│   ├── electron.js         # legacy Electron main process (v1 shell)
-│   └── screenshot.html     # full-screen region-capture overlay (both shells)
+│   └── screenshot.html     # full-screen region-capture overlay
 ├── src/
-│   ├── ipc.js              # dual-backend IPC shim (Tauri / Electron)
+│   ├── ipc.js              # IPC shim over the Tauri Rust core
 │   ├── components/         # Icons, Onboarding, ShortcutsOverlay
 │   ├── modes/              # ImageBoard, VideoPlayer, Browser, Write
 │   ├── utils/              # helpers + Tauri webview adapter
@@ -204,7 +204,6 @@ npm install
 npm run dev
 ```
 
-The legacy Electron shell still works: `npm run start:electron`.
 
 ## Build & package
 
@@ -241,7 +240,7 @@ FloatPad runs entirely on your machine. There is no account, no telemetry and no
 
 - `dist/`, `node_modules/` and `src-tauri/target/` are ignored; only sources are committed.
 - Every push to `main` runs CI (`.github/workflows/ci.yml`): the Vite bundle plus `cargo check` on macOS, Windows and Linux.
-- The Electron v1 shell (`public/electron.js`, `npm run start:electron`) is kept until the Tauri port reaches full parity, then it gets deleted.
+- The Electron v1 shell was retired in v2.1.2 after a full A-to-Z audit; Tauri is the only shell.
 - `FP_SELFTEST=1 cargo run` (from `src-tauri/`, with vite running) executes a hidden end-to-end check of the window/panel/webview/capture plumbing — no window is shown.
 
 ## License

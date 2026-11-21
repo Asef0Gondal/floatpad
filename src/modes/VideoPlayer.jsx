@@ -76,7 +76,7 @@ export default function VideoPlayer({ active, potato }) {
     const onPause = () => { setPlaying(false); cancelAnimationFrame(rafRef.current); };
     const onEnded = () => { setPlaying(false); cancelAnimationFrame(rafRef.current); };
     const onMeta  = () => setDuration(v.duration);
-    const onErr   = () => { if (loaded) alert('Cannot play this file.'); };
+    const onErr   = () => { if (loaded) ipcRenderer.invoke('dialog-message', 'Cannot play this file.'); };
     v.addEventListener('play',           onPlay);
     v.addEventListener('pause',          onPause);
     v.addEventListener('ended',          onEnded);

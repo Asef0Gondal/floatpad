@@ -12,7 +12,7 @@ use tauri::{
     tray::{MouseButton, MouseButtonState, TrayIconBuilder, TrayIconEvent},
     Emitter, Manager, WebviewUrl, WebviewWindowBuilder, WindowEvent,
 };
-use tauri_plugin_global_shortcut::{Shortcut, ShortcutState};
+use tauri_plugin_global_shortcut::{GlobalShortcutExt, Shortcut, ShortcutState};
 
 // ── Persisted prefs (same prefs.json shape as v1) ────────────────────────────
 // Lock + atomic write: move/resize events, panels and adblock toggles all
@@ -57,7 +57,7 @@ pub fn save_prefs(app: &tauri::AppHandle, patch: Map<String, Value>) {
 
 fn save_main_bounds(app: &tauri::AppHandle, win: &tauri::WebviewWindow, mini: &MiniState) {
     if mini.0.lock().unwrap().is_some() {
-        return; // don't persist the 36px mini strip
+        return; // don't persist the mini strip
     }
     let Ok(scale) = win.scale_factor() else { return };
     let Ok(size) = win.inner_size() else { return };
@@ -72,6 +72,24 @@ fn save_main_bounds(app: &tauri::AppHandle, win: &tauri::WebviewWindow, mini: &M
     save_prefs(app, patch);
 }
 
+// Drag/resize fires many events per second; only persist the resting bounds.
+// Each event bumps a generation; a delayed task saves only if it's still latest.
+static BOUNDS_GEN: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+fn save_main_bounds_debounced(app: &tauri::AppHandle, win: &tauri::WebviewWindow) {
+    use std::sync::atomic::Ordering;
+    let gen = BOUNDS_GEN.fetch_add(1, Ordering::SeqCst) + 1;
+    let app = app.clone();
+    let win = win.clone();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        if BOUNDS_GEN.load(Ordering::SeqCst) != gen {
+            return; // a newer move/resize superseded this one
+        }
+        let mini = app.state::<MiniState>();
+        save_main_bounds(&app, &win, &mini);
+    });
+}
+
 // ── App ──────────────────────────────────────────────────────────────────────
 
 pub fn run() {
@@ -80,6 +98,8 @@ pub fn run() {
 
     let toggle: Shortcut = "CommandOrControl+Shift+Space".parse().unwrap();
     let shot: Shortcut = "CommandOrControl+Shift+S".parse().unwrap();
+    let toggle_id = toggle.id();
+    let shot_id = shot.id();
 
     tauri::Builder::default()
         .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
@@ -91,18 +111,14 @@ pub fn run() {
         .plugin(tauri_plugin_drag::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
-                .with_shortcut(toggle)
-                .expect("invalid toggle shortcut")
-                .with_shortcut(shot)
-                .expect("invalid screenshot shortcut")
                 .with_handler(move |app, shortcut, event| {
                     if event.state() != ShortcutState::Pressed {
                         return;
                     }
-                    if shortcut.id() == toggle.id() {
+                    if shortcut.id() == toggle_id {
                         log::info!("shortcut: toggle windows");
                         commands::toggle_all(app);
-                    } else if shortcut.id() == shot.id() {
+                    } else if shortcut.id() == shot_id {
                         log::info!("shortcut: screenshot");
                         commands::open_screenshot(app);
                     }
@@ -111,7 +127,7 @@ pub fn run() {
         )
         .manage(MiniState(Mutex::new(None)))
         .manage(commands::ShotPayloads(Mutex::new(std::collections::HashMap::new())))
-        .setup(|app| {
+        .setup(move |app| {
             // Menu-bar app: no Dock icon (v1: app.dock.hide())
             #[cfg(target_os = "macos")]
             app.set_activation_policy(tauri::ActivationPolicy::Accessory);
@@ -119,6 +135,15 @@ pub fn run() {
             let handle = app.handle().clone();
             let prefs = load_prefs(&handle);
             adblock::init(&handle, commands::allowed_hosts(&prefs));
+
+            // Register hotkeys gracefully: a conflict (another app owns the key)
+            // disables that one shortcut instead of crashing the whole app.
+            for (sc, name) in [(toggle, "toggle (⌘⇧Space)"), (shot, "screenshot (⌘⇧S)")] {
+                if let Err(e) = app.global_shortcut().register(sc) {
+                    log::warn!("global shortcut {name} unavailable: {e}");
+                }
+            }
+
             let num = |k: &str, d: f64| prefs.get(k).and_then(|v| v.as_f64()).unwrap_or(d);
 
             let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
@@ -150,8 +175,7 @@ pub fn run() {
                     let _ = h.emit_to("main", "detach-cleared", ());
                 }
                 WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
-                    let mini = h.state::<MiniState>();
-                    save_main_bounds(&h, &w2, &mini);
+                    save_main_bounds_debounced(&h, &w2);
                 }
                 _ => {}
             });

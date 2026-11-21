@@ -1,14 +1,11 @@
-// Dual-backend IPC shim: Electron (v1 shell) or Tauri (v2 Rust shell).
-// Channel names stay identical to v1 so the mode components don't change.
+// IPC shim over the Tauri Rust core. Channel names match the original API so
+// the mode components stay unchanged.
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 import { tempDir } from '@tauri-apps/api/path';
-import { open, save } from '@tauri-apps/plugin-dialog';
+import { open, save, ask, message } from '@tauri-apps/plugin-dialog';
 import { readFile, readTextFile, writeFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
-
-export const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
-const electron = isTauri ? null : window.require('electron');
 
 const IMG_EXT = ['jpg', 'jpeg', 'png', 'gif', 'webp', 'svg', 'bmp', 'tiff'];
 const VID_EXT = ['mp4', 'mov', 'mkv', 'avi', 'webm', 'm4v', 'wmv', 'flv', 'ogv'];
@@ -70,6 +67,8 @@ async function dragOut(dataUrl) {
 
 // invoke() channels served in JS through the official Tauri plugins
 const JS_INVOKE = {
+  'dialog-ask': (text, title) => ask(text, { title: title || 'FloatPad', kind: 'warning' }),
+  'dialog-message': (text, title) => message(text, { title: title || 'FloatPad' }),
   'dialog-open-images': async () => {
     const r = await open({ title: 'Add images to board', multiple: true, filters: [{ name: 'Images', extensions: IMG_EXT }] });
     return r ? (Array.isArray(r) ? r : [r]) : [];
@@ -140,7 +139,6 @@ const listeners = new Map(); // handler → unlisten promise
 
 export const ipcRenderer = {
   send(channel, ...args) {
-    if (!isTauri) return electron.ipcRenderer.send(channel, ...args);
     if (channel === 'board-drag-start') {
       dragOut(args[0]).catch((e) => console.error('board-drag-start', e));
       return;
@@ -150,19 +148,16 @@ export const ipcRenderer = {
     invoke(entry[0], entry[1](...args)).catch((e) => console.error(channel, e));
   },
   invoke(channel, ...args) {
-    if (!isTauri) return electron.ipcRenderer.invoke(channel, ...args);
     if (JS_INVOKE[channel]) return JS_INVOKE[channel](...args);
     const entry = RUST_INVOKE[channel];
     if (!entry) return Promise.reject(new Error('unknown channel: ' + channel));
     return invoke(entry[0], entry[1](...args));
   },
   on(channel, handler) {
-    if (!isTauri) return electron.ipcRenderer.on(channel, handler);
     listeners.set(handler, listen(channel, (e) => handler(null, e.payload)));
     return this;
   },
   removeListener(channel, handler) {
-    if (!isTauri) return electron.ipcRenderer.removeListener(channel, handler);
     const p = listeners.get(handler);
     if (p) { listeners.delete(handler); p.then((un) => un()); }
     return this;

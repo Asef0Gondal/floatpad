@@ -196,7 +196,7 @@ pub fn win_mini_toggle(app: AppHandle, state: State<'_, MiniState>) {
             let scale = win.scale_factor().unwrap_or(1.0);
             let size = win.inner_size().unwrap_or_default().to_logical::<u32>(scale);
             *mini = Some((size.width, size.height));
-            let _ = win.set_size(tauri::LogicalSize::new(size.width, 36));
+            let _ = win.set_size(tauri::LogicalSize::new(size.width, 34));
             true
         } else {
             if let Some((w, h)) = mini.take() {
@@ -468,6 +468,7 @@ pub async fn web_create(
     let a2 = app.clone();
     let a3 = app.clone();
     let l3 = label.clone();
+    let win_label = win.label().to_string();
     let builder = WebviewBuilder::new(&label, WebviewUrl::External(parsed))
         .user_agent(UA)
         .initialization_script(PAGE_SCRIPT)
@@ -492,7 +493,7 @@ pub async fn web_create(
         })
         .on_new_window(move |url, _features| {
             let _ = a3.emit_to(
-                l3.trim_start_matches("web-"),
+                win_label.clone(),
                 "web-event",
                 json!({ "label": l3, "kind": "open", "url": url.as_str() }),
             );
@@ -587,6 +588,16 @@ pub async fn shot_open(
     }
     let win = builder.build().map_err(|e| e.to_string())?;
     platform::decorate(&win.as_ref().window());
+
+    // Drop the payload if the window closes before (or without) fetching it,
+    // so fast-closed or failed shots don't leak whole images into the map.
+    let app2 = app.clone();
+    let label2 = label.clone();
+    win.on_window_event(move |e| {
+        if let WindowEvent::Destroyed = e {
+            app2.state::<ShotPayloads>().0.lock().unwrap().remove(&label2);
+        }
+    });
     Ok(label)
 }
 

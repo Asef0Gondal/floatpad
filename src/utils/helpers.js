@@ -1,5 +1,4 @@
 import { convertFileSrc } from '@tauri-apps/api/core';
-import { isTauri } from '../ipc';
 
 // Format seconds → m:ss
 export function formatTime(secs) {
@@ -36,10 +35,7 @@ export function loadImageDimensions(src) {
 
 // Convert a file path to a loadable URL (file:// on Electron, asset protocol on Tauri)
 export function filePathToUrl(filePath) {
-  if (!filePath) return '';
-  if (isTauri) return convertFileSrc(filePath);
-  if (filePath.startsWith('file://')) return filePath;
-  return 'file://' + filePath.replace(/\\/g, '/');
+  return filePath ? convertFileSrc(filePath) : '';
 }
 
 // Convert a local file to base64 data URL via IPC
@@ -70,4 +66,12 @@ export function toggleTaskAtIndex(text, idx) {
     n += 1;
     return n === idx ? a + (b === ' ' ? 'x' : ' ') + c : m;
   });
+}
+
+// Potato mode opacity decision (pure): dim to 70% on entry, restore the
+// stashed pre-potato value on exit. Returns the new opacity and stash.
+export function potatoTransition(turningOn, currentOpacity, stashedOpacity) {
+  return turningOn
+    ? { opacity: 70, stash: currentOpacity }
+    : { opacity: stashedOpacity, stash: stashedOpacity };
 }

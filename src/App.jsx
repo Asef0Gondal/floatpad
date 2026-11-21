@@ -11,6 +11,7 @@ import {
   IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock,
 } from './components/Icons';
 import { applyTheme, getInitialTheme, THEME_KEY } from './theme';
+import { potatoTransition } from './utils/helpers';
 import { ipcRenderer } from './ipc';
 
 const MODES = [
@@ -48,10 +49,14 @@ function getInitialMode() {
 }
 
 export default function App() {
-  if (shotParam) return <ShotView />;
+  // Shot windows render a separate component so hooks order stays stable (#8).
+  return shotParam ? <ShotView /> : <AppMain />;
+}
+
+function AppMain() {
   const [mode,       setMode]       = useState(getInitialMode);
   const [theme,      setTheme]      = useState(getInitialTheme);
-  const [opacity,    setOpacity]    = useState(100);
+  const [opacity,    setOpacity]    = useState(() => Number(localStorage.getItem('fp_opacity')) || 100);
   const [potato,     setPotato]     = useState(false);
   const [miniMode,   setMiniMode]   = useState(false);
   const [detached,   setDetached]   = useState(false);
@@ -68,6 +73,7 @@ export default function App() {
 
   const sizeRef = useRef(null);
   const moreRef = useRef(null);
+  const prePotatoOpacity = useRef(Number(localStorage.getItem('fp_opacity')) || 100);
   const isStandalone = !!panelParam;
 
   // ── Side effects ─────────────────────────────────────────
@@ -110,11 +116,13 @@ export default function App() {
     return () => ipcRenderer.removeListener('detach-cleared', h);
   }, []);
 
-  // Potato
+  // Potato: dim to 70%, restore the user's prior opacity on exit (#5)
   useEffect(() => {
     document.documentElement.classList.toggle('potato', potato);
-    ipcRenderer.send('win-opacity', potato ? 70 : opacity);
-    if (potato) setOpacity(70);
+    const { opacity: next, stash } = potatoTransition(potato, opacity, prePotatoOpacity.current);
+    prePotatoOpacity.current = stash;
+    ipcRenderer.send('win-opacity', next);
+    setOpacity(next);
   }, [potato]);
 
   // Close menus on outside click
@@ -140,7 +148,11 @@ export default function App() {
   // ── Handlers ─────────────────────────────────────────────
 
   const handleOpacity = useCallback(e => {
-    const v = +e.target.value; setOpacity(v); ipcRenderer.send('win-opacity', v);
+    const v = +e.target.value;
+    setOpacity(v);
+    localStorage.setItem('fp_opacity', String(v));
+    prePotatoOpacity.current = v;
+    ipcRenderer.send('win-opacity', v);
   }, []);
 
   const handleResize = useCallback((w, h) => {

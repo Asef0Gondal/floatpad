@@ -52,10 +52,10 @@ pub async fn run(app: AppHandle) {
     commands::win_mini_toggle(app.clone(), app.state::<commands::MiniState>());
     let scale = win.scale_factor().unwrap_or(1.0);
     let h = win.inner_size().unwrap().to_logical::<u32>(scale).height;
-    check!(h == 36, "mini mode height 36 (got {h})");
+    check!(h == 34, "mini mode height 34 (got {h})");
     commands::win_mini_toggle(app.clone(), app.state::<commands::MiniState>());
     let h = win.inner_size().unwrap().to_logical::<u32>(scale).height;
-    check!(h > 36, "mini mode restores height (got {h})");
+    check!(h > 34, "mini mode restores height (got {h})");
 
     // 4. resize
     commands::win_resize(app.clone(), app.state::<commands::MiniState>(), 500, 400);

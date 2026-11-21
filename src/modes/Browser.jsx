@@ -10,10 +10,9 @@ import {
   IconShield,
 } from '../components/Icons';
 
-import { ipcRenderer, isTauri } from '../ipc';
+import { ipcRenderer } from '../ipc';
 import { createTauriWebview } from '../utils/tauriWebview';
 
-const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const STORAGE_URL = 'fp_browser_url';
 const STORAGE_BM = 'fp_bookmarks';
 const STORAGE_HIST = 'fp_history';
@@ -111,7 +110,7 @@ export default function Browser({ active }) {
   // Tauri: the "webview" is a native child webview glued to a host div.
   // Must run before the listener effect below so wvRef.current is the adapter.
   useEffect(() => {
-    if (!isTauri || !hostRef.current) return undefined;
+    if (!hostRef.current) return undefined;
     const wv = createTauriWebview({ host: hostRef.current, url: initUrl });
     wvRef.current = wv;
     return () => { wv.destroy(); wvRef.current = null; };
@@ -541,18 +540,7 @@ export default function Browser({ active }) {
         </div>
       )}
 
-      {isTauri ? (
-        <div ref={hostRef} className="browser-webview" />
-      ) : (
-        <webview
-          ref={wvRef}
-          className="browser-webview"
-          src={initUrl}
-          useragent={UA}
-          partition="persist:floatpad"
-          allowpopups="false"
-        />
-      )}
+      <div ref={hostRef} className="browser-webview" />
 
       {ctxMenu && (
         <div
