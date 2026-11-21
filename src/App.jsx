@@ -8,7 +8,7 @@ import Onboarding       from './components/Onboarding';
 import ShotView         from './components/ShotView';
 import {
   IconImage, IconPlay, IconWrite, IconSize, IconSun, IconMoon,
-  IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock,
+  IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock, IconBorderless,
 } from './components/Icons';
 import { applyTheme, getInitialTheme, THEME_KEY } from './theme';
 import { potatoTransition } from './utils/helpers';
@@ -64,6 +64,8 @@ function AppMain() {
   const [winBottom,  setWinBottom]  = useState(false);
   const [showSizes,  setShowSizes]  = useState(false);
   const [showMore,   setShowMore]   = useState(false);
+  const [borderless, setBorderless] = useState(() => localStorage.getItem('fp_borderless') === '1');
+  const [chromeVisible, setChromeVisible] = useState(false);
   const [showKeys,   setShowKeys]   = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !panelParam && !localStorage.getItem(SEEN_KEY)
@@ -74,6 +76,7 @@ function AppMain() {
   const sizeRef = useRef(null);
   const moreRef = useRef(null);
   const prePotatoOpacity = useRef(Number(localStorage.getItem('fp_opacity')) || 100);
+  const chromeHideTimerRef = useRef(null);
   const isStandalone = !!panelParam;
 
   // ── Side effects ─────────────────────────────────────────
@@ -175,6 +178,38 @@ function AppMain() {
     ipcRenderer.send('win-mini-toggle');
   }, []);
 
+  // Borderless (clean) view: hide the titlebar; reveal on hover, auto-hide.
+  const toggleBorderless = useCallback(() => {
+    setBorderless(b => {
+      const next = !b;
+      localStorage.setItem('fp_borderless', next ? '1' : '0');
+      return next;
+    });
+  }, []);
+
+  const revealChrome = useCallback(() => {
+    if (chromeHideTimerRef.current) { clearTimeout(chromeHideTimerRef.current); chromeHideTimerRef.current = null; }
+    setChromeVisible(true);
+  }, []);
+
+  const hideChromeSoon = useCallback((delay = 720) => {
+    if (chromeHideTimerRef.current) clearTimeout(chromeHideTimerRef.current);
+    chromeHideTimerRef.current = window.setTimeout(() => {
+      setChromeVisible(false);
+      chromeHideTimerRef.current = null;
+    }, delay);
+  }, []);
+
+  // In borderless mode the chrome auto-hides unless a menu/overlay is open.
+  useEffect(() => {
+    if (!borderless || miniMode || showSizes || showMore || showKeys || showOnboarding) {
+      revealChrome();
+      return undefined;
+    }
+    hideChromeSoon(180);
+    return () => { if (chromeHideTimerRef.current) clearTimeout(chromeHideTimerRef.current); };
+  }, [borderless, miniMode, showSizes, showMore, showKeys, showOnboarding, revealChrome, hideChromeSoon]);
+
   const undockPanel = useCallback((panelId) => {
     ipcRenderer.send('panel-undock', panelId);
   }, []);
@@ -216,6 +251,13 @@ function AppMain() {
       onClick={toggleWinBottom}
       title={winBottom?'Restore always-on-top':'Always on bottom (wallpaper mode)'}>
       ⤓
+    </button>
+  );
+  const borderlessBtn = (
+    <button className={`tb-btn${borderless?' on':''}`}
+      onClick={toggleBorderless}
+      title={borderless?'Show titlebar':'Borderless view — hide titlebar (hover top edge to reveal)'}>
+      <IconBorderless size={14}/>
     </button>
   );
   const helpBtn = (
@@ -260,9 +302,27 @@ function AppMain() {
 
   // Main window
   return (
-    <div className={`app${potato?' potato':''}${miniMode?' mini':''}`}>
+    <div
+      className={`app${potato?' potato':''}${miniMode?' mini':''}${borderless?' borderless':''}${chromeVisible?' chrome-visible':''}`}
+      onMouseLeave={() => { if (borderless) hideChromeSoon(120); }}
+    >
+      {/* Always-visible grab handle (drag to move), even in borderless view */}
+      <div className="grab-handle-wrap" title="Drag to move window">
+        <div className="grab-handle" data-tauri-drag-region="deep">
+          <span className="grab-handle-texture" aria-hidden="true"/>
+        </div>
+      </div>
 
-      <header className="titlebar" data-tauri-drag-region>
+      {borderless && (
+        <div className="chrome-hotspot" onMouseEnter={revealChrome} onMouseLeave={() => hideChromeSoon(680)}/>
+      )}
+
+      <header
+        className="titlebar"
+        data-tauri-drag-region
+        onMouseEnter={revealChrome}
+        onMouseLeave={() => { if (borderless) hideChromeSoon(680); }}
+      >
 
         {/* Mode tabs */}
         <nav className="mode-nav">
@@ -296,6 +356,7 @@ function AppMain() {
             {detachBtn}
             {lockBtn}
             {bottomBtn}
+            {borderlessBtn}
 
             {/* Size */}
             <div className="tb-menu-wrap" ref={sizeRef}>
@@ -339,6 +400,7 @@ function AppMain() {
                 {detachBtn}
                 {lockBtn}
                 {bottomBtn}
+                {borderlessBtn}
                 {helpBtn}
                 <div className="tb-more-sep"/>
                 {SIZE_PRESETS.map(p=>(

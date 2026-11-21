@@ -55,3 +55,4 @@ export const IconExpand   = p => <I {...p}><path d="M2 10h12M2 6h12"/></I>;
 export const IconPotato   = p => <I {...p}><ellipse cx="8" cy="9" rx="6" ry="5"/><path d="M8 4c0-2 3-3 3-3"/><circle cx="6" cy="9" r=".8" fill="currentColor" stroke="none"/><circle cx="10" cy="9" r=".8" fill="currentColor" stroke="none"/></I>;
 export const IconDetach   = p => <I {...p}><circle cx="8" cy="8" r="6"/><circle cx="8" cy="8" r="2.5"/></I>;
 export const IconGrab     = p => <I {...p}><rect x="1" y="1" width="14" height="14" rx="1.5"/><circle cx="5.5" cy="5.5" r="1.5"/><path d="M1 10l3.5-3.5 3 3 2.5-2 5 4.5"/></I>;
+export const IconBorderless = p => <I {...p}><path d="M1 4V2h2M12 2h2v2M14 12v2h-2M4 14H2v-2"/><rect x="4" y="5" width="8" height="6" rx="1"/></I>;

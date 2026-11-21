@@ -1092,6 +1092,10 @@ export default function ImageBoard({ active }) {
     setScrapeBusy(false);
   }, [addImage]);
 
+  const singleSelectedImage = selected.size === 1
+    ? images.find(image => selected.has(image.id)) || null
+    : null;
+
   // ── GIF playback with frame scrubbing (PureRef 2.0 parity) ──
   const isGif = img => img.src?.startsWith('data:image/gif') || /\.gif($|\?)/i.test(img.source || '');
   const gifSelId = singleSelectedImage && isGif(singleSelectedImage) ? singleSelectedImage.id : null;
@@ -1483,9 +1487,6 @@ export default function ImageBoard({ active }) {
   })() : null;
 
   const sortedImages = [...images].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
-  const singleSelectedImage = selected.size === 1
-    ? images.find(image => selected.has(image.id)) || null
-    : null;
   const visibleAnnotationCount = annotations.length + (draftAnnotation ? 1 : 0);
 
   const renderShapeAnnotation = annotation => {

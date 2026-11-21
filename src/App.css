@@ -46,6 +46,7 @@ textarea { -webkit-user-select:text; user-select:text; }
   height:         100vh;
   background:     var(--fp-bg);
   overflow:       hidden;
+  position:       relative;
 }
 
 /* Mini-mode: collapse to titlebar */
@@ -1180,4 +1181,51 @@ kbd {
   position: absolute; left: 4px; right: 4px; bottom: 4px; z-index: 5;
   background: rgba(0,0,0,0.8); border: 1px solid var(--fp-accent, #4a90e2);
   border-radius: 6px; color: #fff; font-size: 11px; padding: 4px 7px; outline: none;
+}
+
+/* ── Always-visible grab handle + borderless (clean) view ── */
+.grab-handle-wrap {
+  position: absolute; top: 50%; left: 0; z-index: 226;
+  transform: translateY(-50%); pointer-events: none;
+}
+.grab-handle {
+  width: 16px; min-height: 62px;
+  border-radius: 0 10px 10px 0;
+  border: 1px solid var(--fp-border-mid); border-left: none;
+  background:
+    linear-gradient(180deg, rgba(255,255,255,.08), rgba(255,255,255,0)),
+    linear-gradient(180deg, rgba(11,13,18,.96), rgba(18,21,29,.9));
+  box-shadow: 0 12px 28px rgba(0,0,0,.28);
+  display: flex; align-items: center; justify-content: center;
+  pointer-events: auto; cursor: grab; user-select: none; -webkit-user-select: none;
+  opacity: .88; transition: opacity .16s ease, border-color .16s ease;
+}
+.grab-handle:active { cursor: grabbing; }
+.grab-handle:hover { opacity: 1; border-color: var(--fp-border-hi); }
+.grab-handle-texture {
+  width: 8px; height: 34px; border-radius: 999px; opacity: .92;
+  background:
+    radial-gradient(circle, currentColor 1px, transparent 1.2px) 0 0 / 4px 4px,
+    linear-gradient(180deg, rgba(255,255,255,.1), rgba(255,255,255,0));
+  color: var(--fp-text-dim);
+}
+.app.borderless.chrome-visible .grab-handle { opacity: .5; }
+.app.mini .grab-handle-wrap { display: none; }
+
+.chrome-hotspot {
+  position: absolute; top: 0; left: 0; right: 0; height: 18px;
+  z-index: 215; display: none;
+}
+.app.borderless .chrome-hotspot { display: block; }
+
+/* Borderless: titlebar overlays the top and slides away; content fills the window */
+.app.borderless .titlebar {
+  position: absolute; top: 0; left: 0; right: 0;
+  opacity: 0; pointer-events: none; transform: translateY(-100%);
+  transition: opacity .18s ease, transform .18s ease;
+  box-shadow: none;
+}
+.app.borderless.chrome-visible .titlebar {
+  opacity: 1; pointer-events: auto; transform: translateY(0);
+  box-shadow: 0 16px 36px rgba(0,0,0,.18);
 }
