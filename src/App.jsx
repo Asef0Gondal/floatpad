@@ -10,8 +10,7 @@ import {
   IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock,
 } from './components/Icons';
 import { applyTheme, getInitialTheme, THEME_KEY } from './theme';
-
-const { ipcRenderer } = window.require('electron');
+import { ipcRenderer } from './ipc';
 
 const MODES = [
   { id:'board', label:'Board', Icon:IconImage  },

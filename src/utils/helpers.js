@@ -1,3 +1,6 @@
+import { convertFileSrc } from '@tauri-apps/api/core';
+import { isTauri } from '../ipc';
+
 // Format seconds → m:ss
 export function formatTime(secs) {
   if (!isFinite(secs) || secs < 0) return '0:00';
@@ -31,9 +34,10 @@ export function loadImageDimensions(src) {
   });
 }
 
-// Convert a file path to a file:// URL (with proper encoding)
+// Convert a file path to a loadable URL (file:// on Electron, asset protocol on Tauri)
 export function filePathToUrl(filePath) {
   if (!filePath) return '';
+  if (isTauri) return convertFileSrc(filePath);
   if (filePath.startsWith('file://')) return filePath;
   return 'file://' + filePath.replace(/\\/g, '/');
 }

@@ -11,10 +11,11 @@
 
 <p align="center">
   <a href="https://github.com/Asef0Gondal/floatpad"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-Asef0Gondal%2Ffloatpad-181717?logo=github&logoColor=white"></a>
-  <img alt="Electron" src="https://img.shields.io/badge/Electron-28-47848F?logo=electron&logoColor=white">
+  <img alt="Rust" src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black">
+  <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black">
   <img alt="React" src="https://img.shields.io/badge/React-18-61DAFB?logo=react&logoColor=black">
   <img alt="Vite" src="https://img.shields.io/badge/Vite-5-646CFF?logo=vite&logoColor=white">
-  <img alt="Platform" src="https://img.shields.io/badge/platform-macOS-lightgrey?logo=apple&logoColor=white">
+  <img alt="Platform" src="https://img.shields.io/badge/platform-macOS%20%7C%20Windows%20%7C%20Linux-lightgrey">
   <a href="https://github.com/Asef0Gondal/floatpad/actions/workflows/ci.yml"><img alt="CI" src="https://github.com/Asef0Gondal/floatpad/actions/workflows/ci.yml/badge.svg"></a>
   <img alt="License" src="https://img.shields.io/badge/license-MIT-green">
 </p>
@@ -23,7 +24,7 @@
 
 > FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view. That's the entire origin story.
 >
-> **🦀 Rewrite in progress:** FloatPad is being rewritten from the ground up in **Rust** — fully native, lighter and faster. Everything documented below describes the original Electron/React v1.
+> **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app) — a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The original Electron shell still runs (`npm run start:electron`) while the port settles.
 
 ## Why FloatPad
 
@@ -130,61 +131,82 @@ Built for video editors, designers and developers who need a second screen that 
 
 Press `?` anywhere in the app for the full shortcut overlay.
 
-## Architecture
+## Architecture (v2 — Rust/Tauri)
 
-FloatPad is a standard two-process Electron app:
+FloatPad is a Tauri 2 app: a native Rust core with the system webview rendering the React UI.
 
-- **Main process** — `public/electron.js`: window and panel lifecycle, tray, global shortcuts, native dialogs, screen capture through `desktopCapturer`, webview session and ad-block rules, persisted window bounds.
-- **Renderer** — React 18 + Vite 5 in `src/`: a single `App` shell owns mode switching, themes, opacity, mini/standalone state; each mode is a self-contained component under `src/modes/`.
-- **IPC** — renderer talks to main through `ipcRenderer.invoke` for file dialogs and capture, and `ipcRenderer.send` for window commands.
-- **Panel windows** — undocked modes are separate `BrowserWindow`s loading the same bundle with `?panel=<mode>`, so each panel keeps its own state.
-- **Persistence** — window prefs and the ad-block allowlist live in `prefs.json` under Electron's `userData` directory; board documents are `.floatpad` files; the Write pad and theme autosave to `localStorage`.
+- **Rust core** — `src-tauri/src/`: window and panel lifecycle, tray, global shortcuts, opacity/click-through/all-Spaces via platform APIs (`objc2` on macOS, `windows-sys` on Windows), screen capture through `xcap`, persisted window bounds in `prefs.json`, ad-block allowlist.
+- **Embedded browser** — Web mode is a native child webview (Tauri multi-webview) positioned over the app's content area; a main-frame-only injected script reports SPA navigations, context menus and popups back to the shell and hides ad/tracker elements.
+- **Renderer** — React 18 + Vite 5 in `src/`, unchanged from v1: a single `App` shell owns mode switching, themes, opacity, mini/standalone state; each mode is a self-contained component under `src/modes/`.
+- **IPC** — `src/ipc.js` is a dual-backend shim: it speaks Tauri `invoke`/`listen` in v2 and Electron `ipcRenderer` in v1, so every mode keeps the same channel names. File dialogs and file I/O go through the official `dialog`/`fs` plugins; everything window-related is a Rust command.
+- **Panel windows** — undocked modes are separate Tauri windows loading the same bundle with `?panel=<mode>`.
+- **Persistence** — window prefs and the ad-block allowlist live in `prefs.json` under the app config dir; board documents are `.floatpad` files; the Write pad, bookmarks and theme autosave to `localStorage`.
+
+### Known differences from the Electron v1
+
+- **Drag image out to Finder/Figma** is not wired up yet (Electron's `startDrag` has no Tauri core equivalent).
+- **Ad blocking** hides ad/tracker elements and removes ad iframes instead of cancelling network requests (WKWebView exposes no request interceptor); the per-site allowlist works the same.
+- **Detach (click-through)** does not forward hover events to the window underneath.
+- **Window opacity** is macOS/Windows only for now (no-op on Linux).
 
 ## Project structure
 
 ```
 floatpad/
-├── assets/                 # app + tray icons used by electron-builder
+├── assets/                 # app + tray icons
 ├── public/
-│   ├── electron.js         # Electron main process
-│   └── screenshot.html     # full-screen region-capture overlay
+│   ├── electron.js         # legacy Electron main process (v1 shell)
+│   └── screenshot.html     # full-screen region-capture overlay (both shells)
 ├── src/
+│   ├── ipc.js              # dual-backend IPC shim (Tauri / Electron)
 │   ├── components/         # Icons, Onboarding, ShortcutsOverlay
 │   ├── modes/              # ImageBoard, VideoPlayer, Browser, Write
-│   ├── utils/helpers.js    # file/URL/image helpers
+│   ├── utils/              # helpers + Tauri webview adapter
 │   ├── theme.js            # dark / light theme application
 │   ├── App.jsx             # window shell, modes, titlebar
 │   ├── App.css             # all UI styling
 │   └── index.jsx           # React entry point
+├── src-tauri/
+│   ├── src/                # Rust core: lib, commands, platform shims, page.js
+│   ├── capabilities/       # per-window IPC permissions
+│   ├── icons/              # generated bundle icons
+│   └── tauri.conf.json
 ├── index.html
 ├── vite.config.js
-└── package.json            # scripts + electron-builder config
+└── package.json
 ```
 
 ## Getting started
 
-**Requirements:** macOS, Node.js 18 or newer (20 LTS recommended — see `.nvmrc`).
+**Requirements:** Node.js 18+ (20 LTS recommended — see `.nvmrc`), Rust stable ([rustup](https://rustup.rs)), and the Tauri platform prerequisites:
+
+- **macOS:** Xcode Command Line Tools (`xcode-select --install`)
+- **Windows:** WebView2 (preinstalled on 10/11) + MSVC build tools
+- **Linux:** `libwebkit2gtk-4.1-dev`, `libgtk-3-dev`, `libayatana-appindicator3-dev`, `librsvg2-dev`, `libxdo-dev` (see the CI workflow for the full apt line)
 
 ```bash
 # Install dependencies
 npm install
 
-# Run Vite + Electron together (hot reload)
-npm start
+# Run the Rust/Tauri app (hot reload)
+npm run dev
 ```
+
+The legacy Electron shell still works: `npm run start:electron`.
 
 ## Build & package
 
 ```bash
-# Production renderer build → dist/
+# Production frontend build → dist/
 npm run build
 
-# Native macOS app (.dmg, arm64 + x64) → release/
-npm run dist:mac
-
-# Windows installer (.exe) → release/
-npm run dist:win
+# Native app bundles (runs the Rust release build)
+npm run dist:mac      # .app + .dmg  → src-tauri/target/release/bundle/
+npm run dist:win      # NSIS installer
+npm run dist:linux    # .deb + AppImage
 ```
+
+Screen capture (⌘⇧S and frame grabbing) needs the OS **Screen Recording** permission on macOS; the system prompts on first use.
 
 ## Data & privacy
 
@@ -192,9 +214,9 @@ FloatPad runs entirely on your machine. There is no account, no telemetry and no
 
 ## Repository notes
 
-- `dist/`, `release/` and `node_modules/` are ignored; only sources are committed.
-- Every push to `main` runs the CI workflow (`.github/workflows/ci.yml`), which installs dependencies and builds the Vite bundle.
-- `.npm-local/` was a leftover offline npm cache from the first packaging run. It is ignored and no longer tracked by the repository.
+- `dist/`, `node_modules/` and `src-tauri/target/` are ignored; only sources are committed.
+- Every push to `main` runs CI (`.github/workflows/ci.yml`): the Vite bundle plus `cargo check` on macOS, Windows and Linux.
+- The Electron v1 shell (`public/electron.js`, `npm run start:electron`) is kept until the Tauri port reaches full parity, then it gets deleted.
 
 ## License
 

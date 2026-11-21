@@ -1,8 +1,8 @@
 {
   "name": "floatpad",
   "productName": "FloatPad",
-  "version": "1.0.0",
-  "description": "Lean floating reference pad for macOS — board, video, web and write modes in one always-on-top overlay",
+  "version": "2.0.0",
+  "description": "Lean always-on-top reference pad \u2014 board, video, web and write modes in one floating overlay. Rust/Tauri rewrite of the Electron original.",
   "author": "Asif Gondal",
   "license": "MIT",
   "repository": {
@@ -10,12 +10,15 @@
     "url": "https://github.com/Asef0Gondal/floatpad.git"
   },
   "keywords": [
-    "electron",
+    "tauri",
+    "rust",
     "react",
     "floating-window",
     "overlay",
     "reference-pad",
     "macos",
+    "windows",
+    "linux",
     "utility"
   ],
   "main": "public/electron.js",
@@ -24,14 +27,23 @@
     "dev:electron": "cross-env APP_URL=http://localhost:5173 electron .",
     "start": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
     "build": "vite build",
-    "dist:mac": "npm run build && electron-builder --mac",
-    "dist:win": "npm run build && electron-builder --win"
+    "dist:mac": "tauri build --bundles app,dmg",
+    "dist:win": "tauri build --bundles nsis",
+    "tauri": "tauri",
+    "dev": "tauri dev",
+    "build:app": "tauri build",
+    "dist:linux": "tauri build --bundles deb,appimage",
+    "start:electron": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\""
   },
   "dependencies": {
+    "@tauri-apps/api": "^2.12.5",
+    "@tauri-apps/plugin-dialog": "^2.8.4",
+    "@tauri-apps/plugin-fs": "^2.7.1",
     "react": "^18.2.0",
     "react-dom": "^18.2.0"
   },
   "devDependencies": {
+    "@tauri-apps/cli": "^2.12.6",
     "@vitejs/plugin-react": "^4.2.1",
     "concurrently": "^8.2.2",
     "cross-env": "^7.0.3",

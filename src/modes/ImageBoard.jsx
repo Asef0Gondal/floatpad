@@ -13,7 +13,7 @@ import {
 } from '../components/Icons';
 import { loadImageDimensions, scaleToFit, fileToDataUrl, uid } from '../utils/helpers';
 
-const { ipcRenderer } = window.require('electron');
+import { ipcRenderer } from '../ipc';
 
 const EXPORT_PADDING = 48;
 const LABEL_WIDTH = 180;

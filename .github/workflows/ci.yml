@@ -7,28 +7,49 @@ on:
     branches: [ main ]
 
 jobs:
-  build:
-    name: Build & Verify
+  frontend:
+    name: Frontend bundle
     runs-on: ubuntu-latest
-
-    env:
-      # The job only bundles the renderer, so the ~100 MB Electron runtime is
-      # not needed. Skipping its download keeps installs fast and avoids
-      # flaky failures when the release CDN is unavailable.
-      ELECTRON_SKIP_BINARY_DOWNLOAD: '1'
-
     steps:
-      - name: Check out repository
-        uses: actions/checkout@v4
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v4
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
         with:
           node-version: 20
           cache: 'npm'
+      - run: npm ci
+      - run: npm run build
 
-      - name: Install dependencies
-        run: npm ci
+  rust:
+    name: Rust check (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ macos-latest, ubuntu-latest, windows-latest ]
+    steps:
+      - uses: actions/checkout@v4
 
-      - name: Build Vite bundle
-        run: npm run build
+      - name: Install Linux system dependencies
+        if: matrix.os == 'ubuntu-latest'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libwebkit2gtk-4.1-dev build-essential curl wget file \
+            libxdo-dev libssl-dev libayatana-appindicator3-dev librsvg2-dev libgtk-3-dev
+
+      - uses: dtolnay/rust-toolchain@stable
+      - uses: swatinem/rust-cache@v2
+        with:
+          workspaces: src-tauri
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: 'npm'
+      - run: npm ci
+
+      # tauri-build embeds the frontend assets; build them first
+      - run: npm run build
+
+      - name: cargo check
+        working-directory: src-tauri
+        run: cargo check

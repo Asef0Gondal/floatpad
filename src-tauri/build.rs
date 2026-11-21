@@ -1,0 +1,34 @@
+fn main() {
+    tauri_build::try_build(
+        tauri_build::Attributes::new().app_manifest(
+            tauri_build::AppManifest::new().commands(&[
+                "win_close",
+                "win_minimize",
+                "win_show",
+                "show_all",
+                "win_opacity",
+                "win_resize",
+                "win_detach",
+                "win_mini_toggle",
+                "panel_undock",
+                "panel_dock_back",
+                "screenshot_request",
+                "screenshot_cancel",
+                "screenshot_done",
+                "capture_screen",
+                "capture_webview_rect",
+                "adblock_site_status",
+                "adblock_toggle_site",
+                "web_create",
+                "web_set_bounds",
+                "web_show",
+                "web_hide",
+                "web_destroy",
+                "web_eval",
+                "web_eval_result",
+                "web_page_event",
+            ]),
+        ),
+    )
+    .expect("failed to run tauri-build");
+}

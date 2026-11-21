@@ -1,7 +1,7 @@
 import React, { useRef, useState, useEffect, useCallback } from 'react';
 import { formatTime, filePathToUrl } from '../utils/helpers';
 
-const { ipcRenderer } = window.require('electron');
+import { ipcRenderer } from '../ipc';
 
 export default function VideoPlayer({ active, potato }) {
   const vidRef   = useRef(null);

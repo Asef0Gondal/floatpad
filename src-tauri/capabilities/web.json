@@ -1,0 +1,12 @@
+{
+  "$schema": "../gen/schemas/desktop-schema.json",
+  "identifier": "web-pages",
+  "description": "Embedded browser webviews: only the page-event callback channels, nothing else",
+  "webviews": ["web-*"],
+  "remote": { "urls": ["https://*", "https://**", "http://*", "http://**"] },
+  "permissions": [
+    "allow-web-eval-result",
+    "allow-web-page-event",
+    "allow-adblock-site-status"
+  ]
+}

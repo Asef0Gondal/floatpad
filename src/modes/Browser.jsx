@@ -10,7 +10,8 @@ import {
   IconShield,
 } from '../components/Icons';
 
-const { ipcRenderer } = window.require('electron');
+import { ipcRenderer, isTauri } from '../ipc';
+import { createTauriWebview } from '../utils/tauriWebview';
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const STORAGE_URL = 'fp_browser_url';
@@ -75,6 +76,7 @@ function getActiveVideoScript(body) {
 
 export default function Browser({ active }) {
   const wvRef = useRef(null);
+  const hostRef = useRef(null);
   const loadbarRef = useRef(null);
 
   const [urlInput, setUrlInput] = useState(initUrl);
@@ -91,6 +93,15 @@ export default function Browser({ active }) {
   const [siteHost, setSiteHost] = useState('');
   const [siteAdblockDisabled, setSiteAdblockDisabled] = useState(false);
   const [videoBusy, setVideoBusy] = useState(false);
+
+  // Tauri: the "webview" is a native child webview glued to a host div.
+  // Must run before the listener effect below so wvRef.current is the adapter.
+  useEffect(() => {
+    if (!isTauri || !hostRef.current) return undefined;
+    const wv = createTauriWebview({ host: hostRef.current, url: initUrl });
+    wvRef.current = wv;
+    return () => { wv.destroy(); wvRef.current = null; };
+  }, []);
 
   const navigate = useCallback((raw) => {
     const url = normalizeUrl(raw);
@@ -263,6 +274,7 @@ export default function Browser({ active }) {
       const result = await ipcRenderer.invoke('adblock-toggle-site', displayUrl);
       setSiteHost(result?.host || '');
       setSiteAdblockDisabled(!!result?.disabled);
+      try { wvRef.current?.recheckAdblock?.(); } catch (_) {}
     } catch (_) {}
   }, [displayUrl]);
 
@@ -489,14 +501,18 @@ export default function Browser({ active }) {
         </div>
       )}
 
-      <webview
-        ref={wvRef}
-        className="browser-webview"
-        src={initUrl}
-        useragent={UA}
-        partition="persist:floatpad"
-        allowpopups="false"
-      />
+      {isTauri ? (
+        <div ref={hostRef} className="browser-webview" />
+      ) : (
+        <webview
+          ref={wvRef}
+          className="browser-webview"
+          src={initUrl}
+          useragent={UA}
+          partition="persist:floatpad"
+          allowpopups="false"
+        />
+      )}
 
       {ctxMenu && (
         <div

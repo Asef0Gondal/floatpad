@@ -31,7 +31,14 @@ html,body { width:100vw; height:100vh; overflow:hidden; background:transparent; 
 <div id="hint">Drag to select · Enter or double-click to capture · Esc to cancel</div>
 <div id="size">–</div>
 <script>
-const { ipcRenderer } = require('electron');
+// Dual backend: Tauri (raw internals, this page is not bundled) or Electron.
+const ipcRenderer = window.__TAURI_INTERNALS__ ? {
+  invoke: (ch) => window.__TAURI_INTERNALS__.invoke('capture_screen', {}),
+  send: (ch, ...a) => window.__TAURI_INTERNALS__.invoke(
+    ch === 'screenshot-done' ? 'screenshot_done' : 'screenshot_cancel',
+    ch === 'screenshot-done' ? { dataUrl: a[0] } : {}
+  ).catch(() => {}),
+} : require('electron').ipcRenderer;
 
 const canvas = document.getElementById('canvas');
 const ctx    = canvas.getContext('2d');

@@ -1,7 +1,7 @@
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { IconSave, IconFolder, IconWrite } from '../components/Icons';
 
-const { ipcRenderer } = window.require('electron');
+import { ipcRenderer } from '../ipc';
 
 const AUTOSAVE_KEY  = 'fp_write_content';
 const MODE_KEY      = 'fp_write_mode';
