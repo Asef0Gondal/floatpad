@@ -1020,3 +1020,12 @@ kbd {
   color:var(--fp-text-dim); letter-spacing:.04em;
   text-transform:uppercase; flex:1; text-align:center;
 }
+
+/* Click-through reminder (Tauri has no mouse forwarding, so the toggle
+   button itself is unclickable while detached — tray/shortcut restores) */
+.detach-hint {
+  position: fixed; bottom: 10px; left: 50%; transform: translateX(-50%);
+  background: rgba(0,0,0,0.72); color: #ddd; font-size: 11px;
+  padding: 5px 12px; border-radius: 14px; pointer-events: none;
+  white-space: nowrap; z-index: 9999;
+}

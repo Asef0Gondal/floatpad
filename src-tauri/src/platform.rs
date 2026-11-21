@@ -16,7 +16,8 @@ pub fn set_opacity(win: &WebviewWindow, alpha: f64) -> tauri::Result<()> {
         GetWindowLongW, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
         WS_EX_LAYERED,
     };
-    let hwnd = win.hwnd()? as _;
+    // tauri returns the `windows` crate's newtype HWND; windows-sys takes the raw pointer
+    let hwnd = win.hwnd()?.0;
     unsafe {
         let style = GetWindowLongW(hwnd, GWL_EXSTYLE);
         SetWindowLongW(hwnd, GWL_EXSTYLE, style | WS_EX_LAYERED as i32);

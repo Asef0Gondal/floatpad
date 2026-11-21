@@ -96,6 +96,13 @@ export default function App() {
     return () => ipcRenderer.removeListener('mini-mode', h);
   }, []);
 
+  // Rust restores control on tray/shortcut show — keep the toggle honest
+  useEffect(() => {
+    const h = () => setDetached(false);
+    ipcRenderer.on('detach-cleared', h);
+    return () => ipcRenderer.removeListener('detach-cleared', h);
+  }, []);
+
   // Potato
   useEffect(() => {
     document.documentElement.classList.toggle('potato', potato);
@@ -155,7 +162,7 @@ export default function App() {
   if (isStandalone) {
     return (
       <div className={`app${potato?' potato':''}`} style={{height:'100vh'}}>
-        <div className="standalone-titlebar">
+        <div className="standalone-titlebar" data-tauri-drag-region>
           <button
             className="tb-btn"
             onClick={() => ipcRenderer.send('panel-dock-back', panelParam)}
@@ -187,7 +194,7 @@ export default function App() {
   return (
     <div className={`app${potato?' potato':''}${miniMode?' mini':''}`}>
 
-      <header className="titlebar">
+      <header className="titlebar" data-tauri-drag-region>
 
         {/* Mode tabs */}
         <nav className="mode-nav">
@@ -211,7 +218,7 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="tb-spacer"/>
+        <div className="tb-spacer" data-tauri-drag-region/>
 
         <div className="tb-right">
           {/* Theme */}
@@ -289,6 +296,12 @@ export default function App() {
           {visited.has('write') && <Write active={mode==='write'}/>}
         </div>
       </main>
+
+      {detached && (
+        <div className="detach-hint">
+          Click-through on · tray → Show FloatPad (or ⌘⇧Space) restores control
+        </div>
+      )}
 
       {showKeys       && <ShortcutsOverlay onClose={()=>setShowKeys(false)}/>}
       {showOnboarding && <Onboarding onDone={dismissOnboarding}/>}

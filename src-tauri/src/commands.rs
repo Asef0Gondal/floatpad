@@ -29,6 +29,10 @@ pub fn show_all_windows(app: &AppHandle) {
     let mut main = None;
     for (label, win) in app.webview_windows() {
         if label == "main" || label.starts_with("panel-") {
+            // Showing always restores control — otherwise a detached
+            // (click-through) window can never be clicked back to normal.
+            let _ = win.set_ignore_cursor_events(false);
+            let _ = app.emit_to(&label, "detach-cleared", ());
             let _ = win.show();
             if label == "main" {
                 main = Some(win);
