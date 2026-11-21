@@ -554,6 +554,49 @@ pub async fn web_eval(app: AppHandle, label: String, script: String) {
     }
 }
 
+// ── Floating shots: per-image mini windows (PureRef overlay / ScreenFloat) ───
+
+pub struct ShotPayloads(pub std::sync::Mutex<std::collections::HashMap<String, String>>);
+static SHOT_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+
+#[tauri::command]
+pub async fn shot_open(
+    app: AppHandle,
+    payloads: State<'_, ShotPayloads>,
+    data_url: String,
+    w: f64,
+    h: f64,
+) -> Result<String, String> {
+    let n = SHOT_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+    let label = format!("shot-{n}");
+    // fit the image into a 480×360 envelope, keep aspect, sane minimum
+    let scale = (480.0 / w.max(1.0)).min(360.0 / h.max(1.0)).min(1.0);
+    let ww = (w * scale).max(160.0);
+    let hh = (h * scale).max(120.0);
+    payloads.0.lock().unwrap().insert(label.clone(), data_url);
+
+    let mut builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html?shot=1".into()))
+        .title("FloatPad Shot")
+        .inner_size(ww, hh)
+        .min_inner_size(120.0, 90.0)
+        .decorations(false)
+        .always_on_top(true)
+        .skip_taskbar(true);
+    if std::env::var("FP_SELFTEST").is_ok() {
+        builder = builder.visible(false);
+    }
+    let win = builder.build().map_err(|e| e.to_string())?;
+    platform::decorate(&win.as_ref().window());
+    Ok(label)
+}
+
+/// One-shot payload handoff to the shot window (no localStorage race).
+#[tauri::command]
+pub fn shot_payload(webview: Webview, payloads: State<'_, ShotPayloads>) -> Option<String> {
+    let label = webview.window().label().to_string();
+    payloads.0.lock().unwrap().remove(&label)
+}
+
 /// OCR a board image (data URL) → recognized text. macOS Vision, off-main.
 #[tauri::command]
 pub async fn ocr_image(data_url: String) -> Result<Value, String> {

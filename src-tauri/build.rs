@@ -33,6 +33,8 @@ fn main() {
                 "web_page_event",
                 "log_js",
                 "ocr_image",
+                "shot_open",
+                "shot_payload",
             ]),
         ),
     )

@@ -87,6 +87,27 @@ pub async fn run(app: AppHandle) {
     let a = app.clone();
     check!(wait_for(move || a.get_webview_window("panel-write").is_none(), 3000).await, "panel-write docked back");
 
+    // 6b. floating shot window (per-image mini window)
+    let tiny_png = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+    let label = commands::shot_open(
+        app.clone(),
+        app.state::<commands::ShotPayloads>(),
+        tiny_png.into(),
+        100.0,
+        100.0,
+    ).await;
+    check!(label.is_ok(), "shot_open");
+    if let Ok(l) = label {
+        let a = app.clone();
+        let l2 = l.clone();
+        check!(wait_for(move || a.get_webview_window(&l2).is_some(), 3000).await, "shot window created");
+        if let Some(w) = app.get_webview_window(&l) {
+            let _ = w.close();
+        }
+        let a = app.clone();
+        check!(wait_for(move || a.get_webview_window(&l).is_none(), 3000).await, "shot window closed");
+    }
+
     // 7. embedded webview: create + executeJavaScript round-trip + destroy.
     //    This exercises the remote-URL capability chain (the riskiest part).
     let (tx, rx) = std::sync::mpsc::channel::<Value>();

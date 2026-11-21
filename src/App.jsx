@@ -5,6 +5,7 @@ import Browser     from './modes/Browser';
 import Write       from './modes/Write';
 import ShortcutsOverlay from './components/ShortcutsOverlay';
 import Onboarding       from './components/Onboarding';
+import ShotView         from './components/ShotView';
 import {
   IconImage, IconPlay, IconWrite, IconSize, IconSun, IconMoon,
   IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock,
@@ -33,6 +34,7 @@ const MODE_KEY = 'fp_last_mode';
 // Determine if we're in a standalone panel window
 const urlParams   = new URLSearchParams(window.location.search);
 const panelParam  = urlParams.get('panel'); // 'board' | 'video' | 'web' | 'write' | null
+const shotParam   = urlParams.get('shot');  // floating single-image window
 
 // Standalone windows are pinned to their panel; the main window reopens
 // on whichever mode was active last time.
@@ -46,6 +48,7 @@ function getInitialMode() {
 }
 
 export default function App() {
+  if (shotParam) return <ShotView />;
   const [mode,       setMode]       = useState(getInitialMode);
   const [theme,      setTheme]      = useState(getInitialTheme);
   const [opacity,    setOpacity]    = useState(100);

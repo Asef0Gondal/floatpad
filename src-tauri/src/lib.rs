@@ -110,6 +110,7 @@ pub fn run() {
                 .build(),
         )
         .manage(MiniState(Mutex::new(None)))
+        .manage(commands::ShotPayloads(Mutex::new(std::collections::HashMap::new())))
         .setup(|app| {
             // Menu-bar app: no Dock icon (v1: app.dock.hide())
             #[cfg(target_os = "macos")]
@@ -229,6 +230,8 @@ pub fn run() {
             commands::web_page_event,
             commands::log_js,
             commands::ocr_image,
+            commands::shot_open,
+            commands::shot_payload,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FloatPad");

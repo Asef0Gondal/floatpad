@@ -1082,3 +1082,18 @@ kbd {
   cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
 }
 .ocr-chip:hover { background: rgba(255,255,255,0.16); color: #fff; }
+
+/* ── Floating shot window ── */
+.shot-view {
+  position: relative; width: 100vw; height: 100vh; overflow: hidden;
+  background: #0e0e10; display: flex; align-items: center; justify-content: center;
+}
+.shot-img { max-width: 100%; max-height: 100%; object-fit: contain; }
+.shot-empty { color: #555; font-size: 20px; }
+.shot-close {
+  position: absolute; top: 6px; right: 6px; width: 22px; height: 22px;
+  border-radius: 50%; border: none; background: rgba(0,0,0,0.55); color: #ccc;
+  font-size: 11px; cursor: pointer; opacity: 0; transition: opacity 0.15s;
+}
+.shot-view:hover .shot-close { opacity: 1; }
+.shot-close:hover { background: rgba(200,60,60,0.85); color: #fff; }

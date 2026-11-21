@@ -1875,6 +1875,16 @@ export default function ImageBoard({ active }) {
                       </button>
                     )}
                     <button
+                      className="bia-btn"
+                      onClick={e => {
+                        e.stopPropagation();
+                        ipcRenderer.invoke('shot-open', img.src, img.origW || img.w, img.origH || img.h);
+                      }}
+                      title="Float as its own window (shot)"
+                    >
+                      ⧉
+                    </button>
+                    <button
                       className="bia-btn bia-lock"
                       onClick={e => {
                         e.stopPropagation();
