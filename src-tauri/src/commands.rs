@@ -45,18 +45,38 @@ pub fn show_all_windows(app: &AppHandle) {
 }
 
 pub fn toggle_all(app: &AppHandle) {
+    // Panic-key semantics: if the capture overlay is up, dismiss it and bring
+    // the pad back — the shortcut must never leave the user stuck.
+    if let Some(overlay) = app.get_webview_window("screenshot") {
+        let _ = overlay.close();
+        show_all_windows(app);
+        return;
+    }
     let windows: Vec<_> = app
         .webview_windows()
         .into_iter()
         .filter(|(l, _)| l == "main" || l.starts_with("panel-"))
         .map(|(_, w)| w)
         .collect();
+    for w in &windows {
+        let _ = w.set_ignore_cursor_events(false);
+    }
     if windows.iter().any(|w| w.is_visible().unwrap_or(false)) {
         for w in windows {
             let _ = w.hide();
         }
     } else {
         show_all_windows(app);
+    }
+}
+
+/// JS-side error relay so frontend failures show up in the terminal log.
+#[tauri::command]
+pub fn log_js(level: String, msg: String) {
+    match level.as_str() {
+        "warn" => log::warn!("[js] {msg}"),
+        "info" => log::info!("[js] {msg}"),
+        _ => log::error!("[js] {msg}"),
     }
 }
 
@@ -104,6 +124,7 @@ pub fn win_resize(app: AppHandle, state: State<'_, MiniState>, w: u32, h: u32) {
 
 #[tauri::command]
 pub async fn win_detach(app: AppHandle, on: bool) {
+    log::info!("win_detach: {on}");
     if let Some(w) = main_win(&app) {
         // shortcut: Tauri has no mouse-event forwarding ({forward:true} in v1); detached = fully click-through
         let _ = w.set_ignore_cursor_events(on);
@@ -167,13 +188,16 @@ pub async fn panel_undock(app: AppHandle, id: String) {
     let w = prefs.get(&format!("{id}_w")).and_then(|v| v.as_f64()).unwrap_or(dw);
     let h = prefs.get(&format!("{id}_h")).and_then(|v| v.as_f64()).unwrap_or(dh);
 
-    let win = match WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(url))
+    let mut builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(url))
         .title(format!("FloatPad — {id}"))
         .inner_size(w, h)
         .min_inner_size(300.0, 220.0)
         .decorations(false)
-        .always_on_top(true)
-        .build()
+        .always_on_top(true);
+    if std::env::var("FP_SELFTEST").is_ok() {
+        builder = builder.visible(false);
+    }
+    let win = match builder.build()
     {
         Ok(w) => w,
         Err(e) => {
@@ -213,6 +237,7 @@ pub async fn panel_dock_back(app: AppHandle, id: String) {
 // ── Screenshot region capture ────────────────────────────────────────────────
 
 pub fn open_screenshot(app: &AppHandle) {
+    log::info!("screenshot overlay: open");
     if let Some(w) = app.get_webview_window("screenshot") {
         let _ = w.close();
     }
@@ -223,15 +248,18 @@ pub fn open_screenshot(app: &AppHandle) {
             (s.width, s.height)
         })
         .unwrap_or((1440.0, 900.0));
-    match WebviewWindowBuilder::new(app, "screenshot", WebviewUrl::App("screenshot.html".into()))
+    let mut builder = WebviewWindowBuilder::new(app, "screenshot", WebviewUrl::App("screenshot.html".into()))
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
         .position(0.0, 0.0)
-        .inner_size(sw, sh)
-        .build()
+        .inner_size(sw, sh);
+    if std::env::var("FP_SELFTEST").is_ok() {
+        builder = builder.visible(false);
+    }
+    match builder.build()
     {
         Ok(win) => platform::decorate_overlay(&win),
         Err(e) => eprintln!("screenshot window error: {e}"),
@@ -252,6 +280,7 @@ pub async fn screenshot_cancel(app: AppHandle) {
 
 #[tauri::command]
 pub async fn screenshot_done(app: AppHandle, data_url: String) {
+    log::info!("screenshot overlay: done ({} bytes)", data_url.len());
     if let Some(w) = app.get_webview_window("screenshot") {
         let _ = w.close();
     }

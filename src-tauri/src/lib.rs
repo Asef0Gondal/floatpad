@@ -1,5 +1,6 @@
 mod commands;
 mod platform;
+mod selftest;
 
 use commands::MiniState;
 use serde_json::{Map, Value};
@@ -60,10 +61,17 @@ fn save_main_bounds(app: &tauri::AppHandle, win: &tauri::WebviewWindow, mini: &M
 // ── App ──────────────────────────────────────────────────────────────────────
 
 pub fn run() {
+    // Visible runtime logs (IPC denials, shortcut fires, window ops) in dev.
+    let _ = env_logger::Builder::from_env(env_logger::Env::default().default_filter_or("info")).try_init();
+
     let toggle: Shortcut = "CommandOrControl+Shift+Space".parse().unwrap();
     let shot: Shortcut = "CommandOrControl+Shift+S".parse().unwrap();
 
     tauri::Builder::default()
+        .plugin(tauri_plugin_single_instance::init(|app, _args, _cwd| {
+            log::info!("second instance launched — focusing existing windows");
+            commands::show_all_windows(app);
+        }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(
@@ -77,8 +85,10 @@ pub fn run() {
                         return;
                     }
                     if shortcut.id() == toggle.id() {
+                        log::info!("shortcut: toggle windows");
                         commands::toggle_all(app);
                     } else if shortcut.id() == shot.id() {
+                        log::info!("shortcut: screenshot");
                         commands::open_screenshot(app);
                     }
                 })
@@ -106,7 +116,10 @@ pub fn run() {
             }
             let win = builder.build()?;
             platform::decorate(&win);
-            win.show()?;
+            let selftest_mode = std::env::var("FP_SELFTEST").is_ok();
+            if !selftest_mode {
+                win.show()?;
+            }
 
             let h = handle.clone();
             let w2 = win.clone();
@@ -159,6 +172,11 @@ pub fn run() {
                     }
                 })
                 .build(app)?;
+
+            if selftest_mode {
+                let h = handle.clone();
+                tauri::async_runtime::spawn(async move { selftest::run(h).await });
+            }
 
             Ok(())
         })

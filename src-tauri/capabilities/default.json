@@ -5,6 +5,7 @@
   "windows": ["main", "panel-*"],
   "permissions": [
     "core:default",
+    "core:window:allow-start-dragging",
     "dialog:default",
     "fs:default",
     { "identifier": "fs:scope", "allow": [{ "path": "**" }] },
@@ -32,6 +33,7 @@
     "allow-web-show",
     "allow-web-hide",
     "allow-web-destroy",
-    "allow-web-eval"
+    "allow-web-eval",
+    "allow-log-js"
   ]
 }

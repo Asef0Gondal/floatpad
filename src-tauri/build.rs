@@ -27,6 +27,7 @@ fn main() {
                 "web_eval",
                 "web_eval_result",
                 "web_page_event",
+                "log_js",
             ]),
         ),
     )

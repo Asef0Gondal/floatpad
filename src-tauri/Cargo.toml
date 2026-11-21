@@ -16,13 +16,17 @@ tauri-build = { version = "2.7.6", features = [] }
 
 [dependencies]
 base64 = "0.23.1"
+env_logger = "0.11.12"
 image = { version = "0.25.10", default-features = false, features = ["png"] }
+log = "0.4.35"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tauri = { version = "2.12.7", features = ["unstable", "tray-icon", "image-png", "protocol-asset"] }
 tauri-plugin-dialog = "2.8.4"
 tauri-plugin-fs = "2.7.1"
 tauri-plugin-global-shortcut = "2.4.1"
+tauri-plugin-single-instance = "2.4.5"
+tokio = { version = "1.54.1", features = ["time"] }
 url = "2.5.8"
 xcap = "0.9.10"
 
