@@ -42,6 +42,7 @@
     "allow-log-js",
     "allow-ocr-image",
     "allow-shot-open",
-    "allow-shot-payload"
+    "allow-shot-payload",
+    "allow-gif-frames"
   ]
 }

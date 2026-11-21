@@ -35,6 +35,7 @@ fn main() {
                 "ocr_image",
                 "shot_open",
                 "shot_payload",
+                "gif_frames",
             ]),
         ),
     )

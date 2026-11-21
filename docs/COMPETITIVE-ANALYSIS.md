@@ -38,13 +38,13 @@ Legend: ✅ have · 🔶 partial · ❌ missing · — not applicable
 | Arrange: align/distribute/normalize/stack/pack | ✅ | ✅ | ✅ mass | — | — | — |
 | Duplicate / lock item / open source | ✅ | ✅ | 🔶 | — | — | — |
 | Groups + hierarchy tree | ❌ | ✅ 2.0 | ❌ | — | ✅ folders | — |
-| GIF playback + frame scrub | ❌ | ✅ 2.0 | ❌ | — | — | — |
+| GIF playback + frame scrub | ✅ | ✅ 2.0 | ❌ | — | — | — |
 | Slideshow | ✅ | ✅ | ❌ | — | — | — |
 | URL paste → scrape page images | ✅ | ✅ | ❌ | — | — | — |
 | Overlay mode: per-image floating windows | ✅ shots | ✅ | ❌ | — | ✅ core | — |
 | Always-on-bottom (wallpaper mode) | ✅ | ✅ | ❌ | — | — | — |
 | Lock window position | ✅ macOS | ✅ | ❌ | — | ✅ | — |
-| Pixel-art nearest-neighbor sampling | ❌ | ✅ | ❌ | — | — | — |
+| Pixel-art nearest-neighbor sampling | ✅ | ✅ | ❌ | — | — | — |
 | **OCR / data detection (text, links, emails, phones)** | ✅ macOS (QR later) | ❌ | ❌ | — | ✅ killer | — |
 | Shot library: tags/search/smart folders | ❌ | ❌ | ❌ | — | ✅ | — |
 | Screen recording | ❌ | ❌ | ❌ | — | ✅ | — |
@@ -75,9 +75,9 @@ text-only. Our adblock, screenplay mode, A-B loop and potato mode are unique.
 ### Tier 2 — partially shipped
 9. ✅ Write mode: live Markdown preview + interactive task checkboxes (Markraft/Tot parity). Remaining: .md folder workflow.
 10. ✅ Browser history list (Helium parity).
-11. ❌ GIF playback with frame step/scrub (PureRef 2.0) — needs frame extraction (WebCodecs ImageDecoder or Rust gif crate).
+11. ✅ GIF playback: Rust image-crate decode (composited frames + delays), play/pause, timeline scrub, frame step, speed, frame→board.
 12. ✅ URL paste → scrape all page images onto board (PureRef) — hidden webview + eval channel.
-13. ❌ Pixel-art sampling toggle; image comments; replace image.
+13. ✅ Pixel-art sampling (⌥T, export-safe); image comments (💬 badge); replace image (⇄, keeps geometry).
 14. ❌ Shot library: tags + search over saved boards/captures (ScreenFloat-lite).
 
 ### Tier 3 — architectural, later

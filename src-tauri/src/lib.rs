@@ -232,6 +232,7 @@ pub fn run() {
             commands::ocr_image,
             commands::shot_open,
             commands::shot_payload,
+            commands::gif_frames,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FloatPad");

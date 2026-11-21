@@ -613,6 +613,37 @@ pub async fn ocr_image(data_url: String) -> Result<Value, String> {
     Ok(json!({ "text": text }))
 }
 
+/// Decode a GIF into fully-composited PNG frames + delays (PureRef GIF playback).
+/// Capped at 300 frames to keep memory sane on huge GIFs.
+#[tauri::command]
+pub async fn gif_frames(data_url: String) -> Result<Value, String> {
+    let b64 = data_url
+        .split_once("base64,")
+        .map(|(_, b)| b)
+        .unwrap_or(&data_url);
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(b64)
+        .map_err(|e| e.to_string())?;
+    tauri::async_runtime::spawn_blocking(move || {
+        use image::AnimationDecoder;
+        let decoder = image::codecs::gif::GifDecoder::new(std::io::Cursor::new(bytes))
+            .map_err(|e| e.to_string())?;
+        let mut out = Vec::new();
+        for frame in decoder.into_frames().take(300) {
+            let f = frame.map_err(|e| e.to_string())?;
+            let (num, den) = f.delay().numer_denom_ms();
+            let delay = if den == 0 { 100 } else { num / den }.max(20);
+            let buf = f.into_buffer();
+            let url = rgba_to_data_url(buf.width(), buf.height(), buf.into_raw())
+                .ok_or("frame encode failed")?;
+            out.push(json!({ "dataUrl": url, "delay": delay }));
+        }
+        Ok(Value::Array(out))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Callback channel: injected page script returns executeJavaScript results here.
 #[tauri::command]
 pub async fn web_eval_result(

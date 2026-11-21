@@ -1139,3 +1139,17 @@ kbd {
   border-radius: 12px; padding: 3px 10px; font-size: 11px; cursor: pointer; margin: 2px 4px;
 }
 .hist-clear:hover { color: #fff; border-color: rgba(255,255,255,0.35); }
+
+/* ── GIF playback bar ── */
+.gif-bar { gap: 4px; }
+.gif-timeline { width: 130px; accent-color: var(--fp-accent, #4a90e2); }
+.gif-speed {
+  background: rgba(255,255,255,0.08); color: #ddd; border: 1px solid rgba(255,255,255,0.15);
+  border-radius: 6px; font-size: 11px; padding: 2px 4px;
+}
+
+.board-item-comment {
+  position: absolute; left: 4px; bottom: 4px; font-size: 11px;
+  background: rgba(0,0,0,0.55); border-radius: 8px; padding: 1px 5px;
+  pointer-events: none;
+}

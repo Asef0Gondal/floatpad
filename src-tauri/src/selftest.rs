@@ -162,6 +162,32 @@ pub async fn run(app: AppHandle) {
     #[cfg(target_os = "macos")]
     check!(wait_for(|| crate::adblock::is_ready(), 3000).await, "WKContentRuleList compiled");
 
+    // 10. GIF decode round-trip: encode a 2-frame GIF, decode it back
+    {
+        let mut out = Vec::new();
+        let ok = (|| -> Result<(), String> {
+            let mut enc = image::codecs::gif::GifEncoder::new(&mut out);
+            let f1 = image::RgbaImage::from_pixel(2, 2, image::Rgba([255, 0, 0, 255]));
+            let f2 = image::RgbaImage::from_pixel(2, 2, image::Rgba([0, 255, 0, 255]));
+            enc.encode_frame(image::Frame::new(f1)).map_err(|e| e.to_string())?;
+            enc.encode_frame(image::Frame::new(f2)).map_err(|e| e.to_string())?;
+            Ok(())
+        })();
+        if ok.is_ok() {
+            use base64::Engine;
+            let url = format!("data:image/gif;base64,{}", base64::engine::general_purpose::STANDARD.encode(&out));
+            match commands::gif_frames(url).await {
+                Ok(v) => {
+                    let n = v.as_array().map(|a| a.len()).unwrap_or(0);
+                    check!(n == 2, "gif_frames round-trip (got {n} frames)");
+                }
+                Err(e) => log::error!("SELFTEST FAIL: gif_frames: {e}"),
+            }
+        } else {
+            log::error!("SELFTEST FAIL: gif encode for round-trip");
+        }
+    }
+
     log::info!("SELFTEST: done");
     app.exit(0);
 }

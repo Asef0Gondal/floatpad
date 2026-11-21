@@ -331,6 +331,8 @@ function normalizeImageModel(image, index = 0) {
     z: image.z ?? index,
     gray: image.gray ?? false,
     source: image.source ?? null,
+    pixelated: image.pixelated ?? false,
+    comment: image.comment ?? '',
   };
 }
 
@@ -381,6 +383,7 @@ export default function ImageBoard({ active }) {
   const [showArrange, setShowArrange] = useState(false);
   const [ocr, setOcr] = useState(null);
   const [scrapeBusy, setScrapeBusy] = useState(false);
+  const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
@@ -1050,6 +1053,36 @@ export default function ImageBoard({ active }) {
     setScrapeBusy(false);
   }, [addImage]);
 
+  // ── GIF playback with frame scrubbing (PureRef 2.0 parity) ──
+  const isGif = img => img.src?.startsWith('data:image/gif') || /\.gif($|\?)/i.test(img.source || '');
+  const gifSelId = singleSelectedImage && isGif(singleSelectedImage) ? singleSelectedImage.id : null;
+
+  useEffect(() => {
+    if (!gifSelId) { setGif(null); return undefined; }
+    let cancelled = false;
+    const img = imagesRef.current.find(i => i.id === gifSelId);
+    if (!img) return undefined;
+    ipcRenderer.invoke('gif-frames', img.src).then(frames => {
+      if (!cancelled && Array.isArray(frames) && frames.length > 1) {
+        setGif({ id: gifSelId, frames, idx: 0, playing: true, speed: 1 });
+      }
+    }).catch(() => {});
+    return () => { cancelled = true; };
+  }, [gifSelId]);
+
+  useEffect(() => {
+    if (!gif?.playing || !gif.frames.length) return undefined;
+    const delay = (gif.frames[gif.idx]?.delay || 100) / (gif.speed || 1);
+    const t = setTimeout(() => {
+      setGif(g => (g ? { ...g, idx: (g.idx + 1) % g.frames.length } : g));
+    }, delay);
+    return () => clearTimeout(t);
+  }, [gif]);
+
+  const gifStep = useCallback(dir => {
+    setGif(g => (g ? { ...g, playing: false, idx: (g.idx + dir + g.frames.length) % g.frames.length } : g));
+  }, []);
+
   // ── OCR + data detection (ScreenFloat parity, on any image) ──
   const runOcr = useCallback(async img => {
     setOcr({ busy: true });
@@ -1161,6 +1194,7 @@ export default function ImageBoard({ active }) {
         const cy = image.y + image.h / 2 + offsetY;
         ctx.save();
         ctx.globalAlpha = image.opacity ?? 1;
+        ctx.imageSmoothingEnabled = !image.pixelated;
         ctx.translate(cx, cy);
         ctx.scale(image.flipX ? -1 : 1, image.flipY ? -1 : 1);
         ctx.rotate(((image.rotation || 0) * Math.PI) / 180);
@@ -1283,6 +1317,14 @@ export default function ImageBoard({ active }) {
         const ids = selected.size ? selected : new Set(imagesRef.current.map(i => i.id));
         const anyColor = imagesRef.current.some(i => ids.has(i.id) && !i.gray);
         setSelectionGray(anyColor);
+      }
+
+      // ⌥T pixel-art sampling (PureRef)
+      if (e.altKey && e.key === 't' && document.activeElement === document.body) {
+        e.preventDefault();
+        const ids = selected.size ? selected : new Set(imagesRef.current.map(i => i.id));
+        const anySmooth = imagesRef.current.some(i => ids.has(i.id) && !i.pixelated);
+        setImages(prev => prev.map(i => (ids.has(i.id) ? { ...i, pixelated: anySmooth } : i)));
       }
 
       if (e.key === 'Escape') {
@@ -1805,7 +1847,7 @@ export default function ImageBoard({ active }) {
               )}
 
               <img
-                src={img.src}
+                src={gif && gif.id === img.id ? (gif.frames[gif.idx]?.dataUrl || img.src) : img.src}
                 width={img.w}
                 height={img.h}
                 alt=""
@@ -1814,9 +1856,14 @@ export default function ImageBoard({ active }) {
                   opacity: img.opacity ?? 1,
                   transform: `scaleX(${img.flipX ? -1 : 1}) scaleY(${img.flipY ? -1 : 1}) rotate(${img.rotation || 0}deg)`,
                   filter: img.gray ? 'grayscale(1)' : undefined,
+                  imageRendering: img.pixelated ? 'pixelated' : undefined,
                   cursor: pickerMode ? 'crosshair' : undefined,
                 }}
               />
+
+              {img.comment && (
+                <div className="board-item-comment" title={img.comment}>💬</div>
+              )}
 
               {!pickerMode && tool === 'select' && (
                 <>
@@ -1928,6 +1975,52 @@ export default function ImageBoard({ active }) {
                       ⧉
                     </button>
                     <button
+                      className="bia-btn"
+                      onClick={e => {
+                        e.stopPropagation();
+                        setImages(prev => prev.map(image => (
+                          image.id === img.id ? { ...image, pixelated: !image.pixelated } : image
+                        )));
+                      }}
+                      title="Pixel-art mode: nearest-neighbor sampling (⌥T)"
+                    >
+                      ▦
+                    </button>
+                    <button
+                      className="bia-btn"
+                      onClick={e => {
+                        e.stopPropagation();
+                        const c = window.prompt('Comment for this image:', img.comment || '');
+                        if (c !== null) {
+                          setImages(prev => prev.map(image => (
+                            image.id === img.id ? { ...image, comment: c } : image
+                          )));
+                        }
+                      }}
+                      title="Add / edit comment"
+                    >
+                      💬
+                    </button>
+                    <button
+                      className="bia-btn"
+                      onClick={async e => {
+                        e.stopPropagation();
+                        const paths = await ipcRenderer.invoke('dialog-open-images');
+                        if (!paths?.length) return;
+                        const dataUrl = await fileToDataUrl(paths[0], ipcRenderer);
+                        if (!dataUrl) return;
+                        const { w: nw, h: nh } = await loadImageDimensions(dataUrl);
+                        setImages(prev => prev.map(image => (
+                          image.id === img.id
+                            ? { ...image, src: dataUrl, source: paths[0], origW: nw, origH: nh }
+                            : image
+                        )));
+                      }}
+                      title="Replace image (keeps position and size)"
+                    >
+                      ⇄
+                    </button>
+                    <button
                       className="bia-btn bia-lock"
                       onClick={e => {
                         e.stopPropagation();
@@ -1996,6 +2089,37 @@ export default function ImageBoard({ active }) {
 
         {rubberBand && rbStyle && (
           <div className="rubber-band" style={rbStyle}/>
+        )}
+
+        {gif && (
+          <div className="focus-bar gif-bar" style={focusId ? { bottom: 60 } : undefined}>
+            <button className="focus-btn" onClick={() => gifStep(-1)} title="Previous frame">⏮</button>
+            <button className="focus-btn" onClick={() => setGif(g => ({ ...g, playing: !g.playing }))} title="Play / pause">
+              {gif.playing ? '⏸' : '▶'}
+            </button>
+            <button className="focus-btn" onClick={() => gifStep(1)} title="Next frame">⏭</button>
+            <input
+              type="range" className="gif-timeline" min="0" max={gif.frames.length - 1} value={gif.idx}
+              onChange={e => setGif(g => ({ ...g, playing: false, idx: Number(e.target.value) }))}
+              title="Frame timeline"
+            />
+            <span className="focus-count">{gif.idx + 1}/{gif.frames.length}</span>
+            <select
+              className="gif-speed" value={gif.speed}
+              onChange={e => setGif(g => ({ ...g, speed: Number(e.target.value) }))}
+              title="Playback speed"
+            >
+              {[0.25, 0.5, 1, 2].map(v => <option key={v} value={v}>{v}×</option>)}
+            </select>
+            <button
+              className="focus-btn"
+              onClick={() => addImage(gif.frames[gif.idx].dataUrl, null, null)}
+              title="Copy this frame onto the board as a still"
+            >
+              ⊡ Frame
+            </button>
+            <button className="focus-btn" onClick={() => setGif(null)} title="Close GIF controls">✕</button>
+          </div>
         )}
 
         {ocr && (

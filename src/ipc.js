@@ -112,6 +112,7 @@ const RUST_INVOKE = {
   'shot-payload': ['shot_payload', () => ({})],
   'web-create': ['web_create', (label, url) => ({ window: getCurrentWindow().label, label, url, x: 0, y: 0, w: 1, h: 1 })],
   'web-destroy': ['web_destroy', (label) => ({ label })],
+  'gif-frames': ['gif_frames', (dataUrl) => ({ dataUrl })],
   'reveal-path': ['reveal_path', (path) => ({ path })],
   'open-external': ['open_external', (url) => ({ url })],
   'win-always-bottom': ['win_always_bottom', (on) => ({ on })],
