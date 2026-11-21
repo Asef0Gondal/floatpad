@@ -173,24 +173,11 @@ pub async fn panel_undock(app: AppHandle, id: String) {
         let _ = w.set_focus();
         return;
     }
-    let Some(main) = main_win(&app) else {
-        log::warn!("panel-undock: no main window");
-        return;
-    };
-    let main_url = main.url();
-    let origin = main_url
-        .as_ref()
-        .map(|u| u.origin().ascii_serialization())
-        .unwrap_or_else(|_| "tauri://localhost".into());
-    let url_str = format!("{origin}/index.html?panel={id}");
-    let url = match url_str.parse() {
-        Ok(u) => u,
-        Err(e) => {
-            log::warn!("panel-undock: bad url {url_str}: {e}");
-            return;
-        }
-    };
-    log::info!("panel-undock: {label} → {url_str}");
+    // App() resolves against the configured base URL deterministically.
+    // (Deriving from main.url() raced the first navigation: before commit it
+    // is about:blank → opaque origin → "null" → invalid panel URL.)
+    let url = WebviewUrl::App(format!("index.html?panel={id}").into());
+    log::info!("panel-undock: {label}");
 
     let prefs = load_prefs(&app);
     let (dw, dh) = PANEL_DEFAULTS
@@ -201,7 +188,7 @@ pub async fn panel_undock(app: AppHandle, id: String) {
     let w = prefs.get(&format!("{id}_w")).and_then(|v| v.as_f64()).unwrap_or(dw);
     let h = prefs.get(&format!("{id}_h")).and_then(|v| v.as_f64()).unwrap_or(dh);
 
-    let mut builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::External(url))
+    let mut builder = WebviewWindowBuilder::new(&app, &label, url)
         .title(format!("FloatPad — {id}"))
         .inner_size(w, h)
         .min_inner_size(300.0, 220.0)

@@ -84,6 +84,14 @@ the command is declared in `build.rs` via `AppManifest::commands(&[...])`.
   toggles concurrently: guard with a mutex and write atomically (tmp + rename),
   otherwise updates are lost or the file is torn.
 
+### Never derive app URLs from a live webview's url()
+`main.url()` before the first navigation commits is `about:blank` → opaque
+origin → `origin().ascii_serialization()` = `"null"` → panel URLs became
+`null/index.html?panel=x` (release-only race). Use
+`WebviewUrl::App("index.html?panel=x".into())` — Tauri resolves it against the
+configured base (devUrl / tauri://localhost) deterministically, and `Url::join`
+preserves the query string.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
