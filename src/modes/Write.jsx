@@ -38,9 +38,10 @@ export default function Write({ active }) {
 
   const [writeMode,  setWriteMode]  = useState(() => localStorage.getItem(MODE_KEY) || 'script');
   const [content,    setContent]    = useState(() => localStorage.getItem(AUTOSAVE_KEY) || '');
-  const [wordCount,  setWordCount]  = useState(0);
-  const [sceneCount, setSceneCount] = useState(0);
-  const [pages,      setPages]      = useState(1);
+  // Derived during render — no state-sync churn (timer stays stateful below)
+  const wordCount  = countWords(content);
+  const sceneCount = countScenes(content);
+  const pages      = estimatePages(content);
   const [spType,     setSpType]     = useState(0);  // index into SP_TYPES
   const [timerSecs,  setTimerSecs]  = useState(25 * 60);
   const [timerRunning, setTimerRunning] = useState(false);
@@ -69,15 +70,6 @@ export default function Write({ active }) {
     });
     return () => handlers.forEach(([box, h]) => box.removeEventListener('change', h));
   }, [preview, rendered]);
-
-  // ── Stats ─────────────────────────────────────────────────
-  const updateStats = useCallback((text) => {
-    setWordCount(countWords(text));
-    setSceneCount(countScenes(text));
-    setPages(estimatePages(text));
-  }, []);
-
-  useEffect(() => { updateStats(content); }, [content, updateStats]);
 
   // ── Autosave ──────────────────────────────────────────────
   useEffect(() => {
@@ -151,8 +143,8 @@ export default function Write({ active }) {
     const filePath = await ipcRenderer.invoke('dialog-write-open');
     if (!filePath) return;
     const text = await ipcRenderer.invoke('file-read-text', filePath);
-    if (text) { setContent(text); updateStats(text); }
-  }, [updateStats]);
+    if (text) setContent(text);
+  }, []);
 
   // ── Focus timer ───────────────────────────────────────────
   const toggleTimer = useCallback(() => {

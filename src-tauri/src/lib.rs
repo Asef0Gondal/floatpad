@@ -109,6 +109,7 @@ pub fn run() {
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
         .plugin(tauri_plugin_drag::init())
+        .plugin(tauri_plugin_opener::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_handler(move |app, shortcut, event| {
@@ -224,9 +225,6 @@ pub fn run() {
         })
         .invoke_handler(tauri::generate_handler![
             commands::win_close,
-            commands::win_minimize,
-            commands::win_show,
-            commands::show_all,
             commands::win_opacity,
             commands::win_resize,
             commands::win_detach,

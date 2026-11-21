@@ -24,13 +24,11 @@ export function scaleToFit(w, h, maxW = 400) {
 }
 
 // Load image and resolve natural dimensions
-export function loadImageDimensions(src) {
-  return new Promise((resolve, reject) => {
-    const img = new Image();
-    img.onload  = () => resolve({ w: img.naturalWidth, h: img.naturalHeight });
-    img.onerror = () => reject(new Error('Cannot load: ' + src));
-    img.src = src;
-  });
+export async function loadImageDimensions(src) {
+  const img = new Image();
+  img.src = src;
+  await img.decode();
+  return { w: img.naturalWidth, h: img.naturalHeight };
 }
 
 // Convert a file path to a loadable URL (file:// on Electron, asset protocol on Tauri)

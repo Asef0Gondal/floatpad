@@ -1,6 +1,7 @@
 // Every IPC channel the v1 Electron main process served, as Tauri commands.
 // Names are snake_case; the frontend shim (src/ipc.js) maps the old kebab channels.
 use crate::{load_prefs, save_prefs, platform};
+use tauri_plugin_opener::OpenerExt;
 use base64::Engine;
 use serde::Deserialize;
 use serde_json::{json, Map, Value};
@@ -122,23 +123,6 @@ pub async fn win_close(app: AppHandle) {
 }
 
 #[tauri::command]
-pub async fn win_minimize(app: AppHandle) {
-    if let Some(w) = main_win(&app) {
-        let _ = w.minimize();
-    }
-}
-
-#[tauri::command]
-pub async fn win_show(app: AppHandle) {
-    show_all_windows(&app);
-}
-
-#[tauri::command]
-pub async fn show_all(app: AppHandle) {
-    show_all_windows(&app);
-}
-
-#[tauri::command]
 pub async fn win_opacity(webview: Webview, v: f64) {
     // Applies to the calling window — undocked panels get their own opacity
     // (v1 always hit the main window, even from a panel's slider).
@@ -188,35 +172,18 @@ pub async fn win_lock(app: AppHandle, on: bool) {
 
 /// Reveal a local file in Finder / Explorer / the Linux file manager.
 #[tauri::command]
-pub async fn reveal_path(path: String) {
-    #[cfg(target_os = "macos")]
-    let _ = std::process::Command::new("open").arg("-R").arg(&path).spawn();
-    #[cfg(target_os = "windows")]
-    let _ = std::process::Command::new("explorer").arg(format!("/select,{path}")).spawn();
-    #[cfg(all(unix, not(target_os = "macos")))]
-    {
-        let parent = std::path::Path::new(&path).parent().map(|p| p.to_path_buf());
-        if let Some(dir) = parent {
-            let _ = std::process::Command::new("xdg-open").arg(dir).spawn();
-        }
-    }
+pub async fn reveal_path(app: AppHandle, path: String) {
+    let _ = app.opener().reveal_item_in_dir(path);
 }
 
 /// Open an http(s) URL in the default browser (board "open source" for web images).
 #[tauri::command]
-pub async fn open_external(url: String) {
-    let Ok(parsed) = url::Url::parse(&url) else { return };
+pub async fn open_external(app: AppHandle, url: String) {
+    let Ok(parsed) = tauri::Url::parse(&url) else { return };
     if !matches!(parsed.scheme(), "http" | "https") {
         return;
     }
-    #[cfg(target_os = "macos")]
-    let _ = std::process::Command::new("open").arg(&url).spawn();
-    #[cfg(target_os = "windows")]
-    let _ = std::process::Command::new("rundll32")
-        .args(["url.dll,FileProtocolHandler", &url])
-        .spawn();
-    #[cfg(all(unix, not(target_os = "macos")))]
-    let _ = std::process::Command::new("xdg-open").arg(&url).spawn();
+    let _ = app.opener().open_url(url, None::<String>);
 }
 
 #[tauri::command]
@@ -433,7 +400,7 @@ pub async fn capture_webview_rect(app: AppHandle, label: String, rect: Rect) -> 
 // ── Ad-block allowlist (persisted per host, v1 parity) ───────────────────────
 
 fn host_of(raw: &str) -> String {
-    url::Url::parse(raw)
+    tauri::Url::parse(raw)
         .ok()
         .and_then(|u| u.host_str().map(|h| h.to_lowercase()))
         .unwrap_or_default()
@@ -493,7 +460,7 @@ pub async fn web_create(
         return Ok(());
     }
     let win = app.get_window(&window).ok_or("window not found")?;
-    let parsed: url::Url = url.parse().map_err(|e: url::ParseError| e.to_string())?;
+    let parsed = url.parse::<tauri::Url>().map_err(|e| e.to_string())?;
     let scale = win.scale_factor().map_err(|e| e.to_string())?;
 
     let a1 = app.clone();

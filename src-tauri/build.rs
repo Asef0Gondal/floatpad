@@ -3,9 +3,6 @@ fn main() {
         tauri_build::Attributes::new().app_manifest(
             tauri_build::AppManifest::new().commands(&[
                 "win_close",
-                "win_minimize",
-                "win_show",
-                "show_all",
                 "win_opacity",
                 "win_resize",
                 "win_detach",

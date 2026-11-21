@@ -13,9 +13,6 @@ const VID_EXT = ['mp4', 'mov', 'mkv', 'avi', 'webm', 'm4v', 'wmv', 'flv', 'ogv']
 // send() channels → Rust commands + arg mapping
 const SEND = {
   'win-close': ['win_close', () => ({})],
-  'win-minimize': ['win_minimize', () => ({})],
-  'win-show': ['win_show', () => ({})],
-  'show-all': ['show_all', () => ({})],
   'win-opacity': ['win_opacity', (v) => ({ v })],
   'win-resize': ['win_resize', (w, h) => ({ w, h })],
   'win-detach': ['win_detach', (on) => ({ on })],

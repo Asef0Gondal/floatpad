@@ -38,9 +38,6 @@
     "fs:allow-read-text-file",
     "fs:allow-write-text-file",
     "allow-win-close",
-    "allow-win-minimize",
-    "allow-win-show",
-    "allow-show-all",
     "allow-win-opacity",
     "allow-win-resize",
     "allow-win-detach",
@@ -68,6 +65,7 @@
     "allow-shot-payload",
     "allow-gif-frames",
     "allow-autosave-board",
-    "allow-load-autosave-board"
+    "allow-load-autosave-board",
+    "opener:default"
   ]
 }
