@@ -91,6 +91,7 @@ Built for video editors, designers and developers who need a second screen that 
 - **Dark / light themes** with the choice persisted
 - **Potato mode** cuts rendering work for low CPU/VRAM use while gaming or rendering
 - **Menu-bar app**: closing hides the window instead of quitting; `⌘⇧Space` brings it back
+- **`⌘⇧Space` is also a panic key**: it dismisses the screenshot overlay and restores click control if the window is detached, then toggles visibility
 - Window position and size are remembered across launches
 
 ## Keyboard shortcuts
@@ -217,6 +218,7 @@ FloatPad runs entirely on your machine. There is no account, no telemetry and no
 - `dist/`, `node_modules/` and `src-tauri/target/` are ignored; only sources are committed.
 - Every push to `main` runs CI (`.github/workflows/ci.yml`): the Vite bundle plus `cargo check` on macOS, Windows and Linux.
 - The Electron v1 shell (`public/electron.js`, `npm run start:electron`) is kept until the Tauri port reaches full parity, then it gets deleted.
+- `FP_SELFTEST=1 cargo run` (from `src-tauri/`, with vite running) executes a hidden end-to-end check of the window/panel/webview/capture plumbing — no window is shown.
 
 ## License
 
