@@ -84,6 +84,15 @@ the command is declared in `build.rs` via `AppManifest::commands(&[...])`.
   toggles concurrently: guard with a mutex and write atomically (tmp + rename),
   otherwise updates are lost or the file is torn.
 
+### Flex toolbars overflow silently — reserve a grip, fold don't clip
+A `flex-shrink: 0` control group plus a `min-width: 0` spacer means narrow
+windows push controls off the edge (invisible, unreachable) and consume the
+only drag area. Pattern that works: guaranteed min-width grip strip with
+`data-tauri-drag-region`, progressive compression via viewport media queries
+(the webview viewport IS the window), and an overflow menu for secondary
+controls so nothing is ever hidden. Mini/collapsed modes should be mostly
+grip strip. See the titlebar in App.jsx / App.css.
+
 ### Never derive app URLs from a live webview's url()
 `main.url()` before the first navigation commits is `about:blank` → opaque
 origin → `origin().ascii_serialization()` = `"null"` → panel URLs became
