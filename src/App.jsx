@@ -58,6 +58,7 @@ export default function App() {
   const [winLocked,  setWinLocked]  = useState(false);
   const [winBottom,  setWinBottom]  = useState(false);
   const [showSizes,  setShowSizes]  = useState(false);
+  const [showMore,   setShowMore]   = useState(false);
   const [showKeys,   setShowKeys]   = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !panelParam && !localStorage.getItem(SEEN_KEY)
@@ -66,6 +67,7 @@ export default function App() {
   const [visited, setVisited] = useState(() => new Set([getInitialMode()]));
 
   const sizeRef = useRef(null);
+  const moreRef = useRef(null);
   const isStandalone = !!panelParam;
 
   // ── Side effects ─────────────────────────────────────────
@@ -119,6 +121,7 @@ export default function App() {
   useEffect(() => {
     const h = e => {
       if (sizeRef.current && !sizeRef.current.contains(e.target)) setShowSizes(false);
+      if (moreRef.current && !moreRef.current.contains(e.target)) setShowMore(false);
     };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
@@ -169,6 +172,46 @@ export default function App() {
     setShowOnboarding(false);
   }, []);
 
+  // Secondary controls — shown inline on wide windows, inside the ⋯ menu on narrow ones
+  const themeBtn = (
+    <button className="tb-btn" onClick={toggleTheme}
+      title={theme==='dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
+      {theme==='dark' ? <IconSun size={14}/> : <IconMoon size={14}/>}
+    </button>
+  );
+  const potatoBtn = (
+    <button className={`tb-btn${potato?' on':''}`}
+      onClick={()=>setPotato(p=>!p)} title="Potato mode — low resource usage">
+      <IconPotato size={14}/>
+    </button>
+  );
+  const detachBtn = (
+    <button className={`tb-btn${detached?' on':''}`}
+      onClick={toggleDetach}
+      title={detached?'Detached — click to restore':'Detach — click-through'}>
+      <IconDetach size={14}/>
+    </button>
+  );
+  const lockBtn = (
+    <button className={`tb-btn${winLocked?' on':''}`}
+      onClick={toggleWinLock}
+      title={winLocked?'Unlock window position':'Lock window position'}>
+      {winLocked?'🔒':'🔓'}
+    </button>
+  );
+  const bottomBtn = (
+    <button className={`tb-btn${winBottom?' on':''}`}
+      onClick={toggleWinBottom}
+      title={winBottom?'Restore always-on-top':'Always on bottom (wallpaper mode)'}>
+      ⤓
+    </button>
+  );
+  const helpBtn = (
+    <button className="tb-btn" onClick={()=>setShowKeys(s=>!s)} title="Shortcuts (?)">
+      <IconHelp size={14}/>
+    </button>
+  );
+
   // ── Render ────────────────────────────────────────────────
 
   // Standalone mode: just the single panel + slim titlebar
@@ -214,12 +257,12 @@ export default function App() {
           {MODES.map(({ id, label, Icon }) => (
             <button
               key={id}
-              className={`mode-tab${mode===id?' active':''}`}
+              className={`mode-tab${mode===id?' active':''}${Icon?'':' no-icon'}`}
               onClick={() => setMode(id)}
               title={label}
             >
               {Icon && <Icon size={13}/>}
-              {label}
+              <span className="mode-tab-label">{label}</span>
               <span
                 className="mode-tab-undock"
                 onClick={e => { e.stopPropagation(); undockPanel(id); }}
@@ -231,57 +274,35 @@ export default function App() {
           ))}
         </nav>
 
-        <div className="tb-spacer" data-tauri-drag-region/>
+        {/* Guaranteed grab strip — never collapses below 44px */}
+        <div className="tb-spacer" data-tauri-drag-region title="Drag to move"/>
 
         <div className="tb-right">
-          {/* Theme */}
-          <button className="tb-btn" onClick={toggleTheme}
-            title={theme==='dark' ? 'Switch to light mode' : 'Switch to dark mode'}>
-            {theme==='dark' ? <IconSun size={14}/> : <IconMoon size={14}/>}
-          </button>
+          <div className="tb-secondary">
+            {themeBtn}
+            {potatoBtn}
+            {detachBtn}
+            {lockBtn}
+            {bottomBtn}
 
-          {/* Potato */}
-          <button className={`tb-btn${potato?' on':''}`}
-            onClick={()=>setPotato(p=>!p)} title="Potato mode — low resource usage">
-            <IconPotato size={14}/>
-          </button>
+            {/* Size */}
+            <div className="tb-menu-wrap" ref={sizeRef}>
+              <button className="tb-btn" onClick={()=>setShowSizes(s=>!s)} title="Window size">
+                <IconSize size={14}/>
+              </button>
+              {showSizes && (
+                <div className="tb-menu">
+                  {SIZE_PRESETS.map(p=>(
+                    <button key={p.label} className="tb-menu-item" onClick={()=>handleResize(p.w,p.h)}>
+                      <span className="tb-menu-label">{p.label}</span>
+                      <span className="tb-menu-sub">{p.sub}</span>
+                    </button>
+                  ))}
+                </div>
+              )}
+            </div>
 
-          {/* Detach */}
-          <button className={`tb-btn${detached?' on':''}`}
-            onClick={toggleDetach}
-            title={detached?'Detached — click to restore':'Detach — click-through'}>
-            <IconDetach size={14}/>
-          </button>
-
-          {/* Lock window position (PureRef ⌘W) */}
-          <button className={`tb-btn${winLocked?' on':''}`}
-            onClick={toggleWinLock}
-            title={winLocked?'Unlock window position':'Lock window position'}>
-            {winLocked?'🔒':'🔓'}
-          </button>
-
-          {/* Always on bottom — interactable wallpaper (PureRef) */}
-          <button className={`tb-btn${winBottom?' on':''}`}
-            onClick={toggleWinBottom}
-            title={winBottom?'Restore always-on-top':'Always on bottom (wallpaper mode)'}>
-            ⤓
-          </button>
-
-          {/* Size */}
-          <div className="tb-menu-wrap" ref={sizeRef}>
-            <button className="tb-btn" onClick={()=>setShowSizes(s=>!s)} title="Window size">
-              <IconSize size={14}/>
-            </button>
-            {showSizes && (
-              <div className="tb-menu">
-                {SIZE_PRESETS.map(p=>(
-                  <button key={p.label} className="tb-menu-item" onClick={()=>handleResize(p.w,p.h)}>
-                    <span className="tb-menu-label">{p.label}</span>
-                    <span className="tb-menu-sub">{p.sub}</span>
-                  </button>
-                ))}
-              </div>
-            )}
+            {helpBtn}
           </div>
 
           {/* Opacity */}
@@ -289,15 +310,34 @@ export default function App() {
             value={opacity} onChange={handleOpacity} title={`Opacity: ${opacity}%`}/>
 
           {/* Mini */}
-          <button className="tb-btn" onClick={toggleMini}
+          <button className="tb-btn tb-mini" onClick={toggleMini}
             title={miniMode?'Expand':'Collapse to mini'}>
             {miniMode ? <IconExpand size={14}/> : <IconMini size={14}/>}
           </button>
 
-          {/* Help */}
-          <button className="tb-btn" onClick={()=>setShowKeys(s=>!s)} title="Shortcuts (?)">
-            <IconHelp size={14}/>
-          </button>
+          {/* Overflow menu — secondary controls stay reachable at narrow widths */}
+          <div className="tb-menu-wrap tb-more-wrap" ref={moreRef}>
+            <button className="tb-btn tb-more" onClick={()=>setShowMore(s=>!s)} title="More controls">
+              ⋯
+            </button>
+            {showMore && (
+              <div className="tb-menu tb-more-menu">
+                {themeBtn}
+                {potatoBtn}
+                {detachBtn}
+                {lockBtn}
+                {bottomBtn}
+                {helpBtn}
+                <div className="tb-more-sep"/>
+                {SIZE_PRESETS.map(p=>(
+                  <button key={p.label} className="tb-menu-item" onClick={()=>{handleResize(p.w,p.h); setShowMore(false);}}>
+                    <span className="tb-menu-label">{p.label}</span>
+                    <span className="tb-menu-sub">{p.sub}</span>
+                  </button>
+                ))}
+              </div>
+            )}
+          </div>
 
           {/* Close → hides, tray keeps alive */}
           <button className="tb-close" onClick={()=>ipcRenderer.send('win-close')}

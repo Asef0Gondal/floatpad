@@ -93,7 +93,8 @@ Built for video editors, designers and developers who need a second screen that 
 - **Lock the window position** so it can't be dragged accidentally
 - **Opacity** slider from 100% down to 15%
 - **Detach** toggles click-through, with mouse events forwarded to the window underneath
-- **Mini mode** collapses the window to its title bar for a near-invisible strip
+- **Mini mode** collapses the window to a grabbable strip (drag the ⠿ grip) with just expand + close
+- **Responsive title bar**: controls compress as the window narrows; secondary controls fold into a ⋯ menu instead of disappearing, and a dedicated grip strip is always available for moving the window
 - **Window sizes**: Tiny `400×320`, Small `580×440`, Medium `700×560`, Large `960×700`, Wide `1100×620`
 - **Standalone panels**: undock any mode into its own floating window and dock it back later
 - **Dark / light themes** with the choice persisted

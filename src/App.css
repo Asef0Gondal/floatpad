@@ -119,8 +119,48 @@ textarea { -webkit-user-select:text; user-select:text; }
   background:  var(--fp-accent-dim);
 }
 
-.tb-spacer { flex:1; min-width:0; }
+.tb-spacer {
+  flex: 1 1 auto; min-width: 44px; position: relative;
+  cursor: grab; -webkit-app-region: drag; align-self: stretch;
+}
+.tb-spacer:active { cursor: grabbing; }
+.tb-spacer::after {
+  content: '⠿'; position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  color: var(--fp-text-faint); opacity: 0.5; font-size: 10px;
+  pointer-events: none;
+}
 .tb-right  { display:flex; align-items:center; gap:2px; flex-shrink:0; }
+.tb-secondary { display:flex; align-items:center; gap:2px; }
+.tb-more { display:none; font-size:14px; letter-spacing:1px; }
+.tb-more-menu { display:flex; flex-direction:column; align-items:stretch; min-width:150px; padding:4px; gap:1px; }
+.tb-more-menu .tb-btn { width:100%; justify-content:flex-start; height:28px; padding:0 10px; }
+.tb-more-sep { height:1px; background:var(--fp-border); margin:4px 2px; }
+
+/* ── Responsive titlebar: compress, then fold secondary controls into ⋯ ── */
+@media (min-width: 621px) {
+  .tb-more-wrap { display:none; }
+}
+@media (max-width: 760px) {
+  .titlebar { gap:2px; padding:0 4px 0 6px; }
+  .mode-tab { padding:0 5px; }
+  .tb-opacity { width:56px; }
+}
+@media (max-width: 620px) {
+  .tb-secondary { display:none; }
+  .tb-more { display:flex; }
+  .mode-tab-label { display:none; }
+  .mode-tab.no-icon .mode-tab-label { display:inline; }
+  .mode-tab { padding:0 7px; }
+  .tb-opacity { width:48px; }
+}
+
+/* Mini mode: a grabbable strip with just expand + close */
+.app.mini .mode-nav,
+.app.mini .tb-secondary,
+.app.mini .tb-opacity,
+.app.mini .tb-more-wrap { display:none; }
+.app.mini .tb-spacer { min-width:0; }
 
 /* Icon buttons in titlebar */
 .tb-btn {
