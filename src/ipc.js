@@ -2,6 +2,7 @@
 // Channel names stay identical to v1 so the mode components don't change.
 import { invoke, Channel } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 import { tempDir } from '@tauri-apps/api/path';
 import { open, save } from '@tauri-apps/plugin-dialog';
 import { readFile, readTextFile, writeFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
@@ -109,6 +110,8 @@ const RUST_INVOKE = {
   'ocr-image': ['ocr_image', (dataUrl) => ({ dataUrl })],
   'shot-open': ['shot_open', (dataUrl, w, h) => ({ dataUrl, w, h })],
   'shot-payload': ['shot_payload', () => ({})],
+  'web-create': ['web_create', (label, url) => ({ window: getCurrentWindow().label, label, url, x: 0, y: 0, w: 1, h: 1 })],
+  'web-destroy': ['web_destroy', (label) => ({ label })],
   'reveal-path': ['reveal_path', (path) => ({ path })],
   'open-external': ['open_external', (url) => ({ url })],
   'win-always-bottom': ['win_always_bottom', (on) => ({ on })],

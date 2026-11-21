@@ -62,3 +62,12 @@ export function uid() { return ++_uid; }
 
 // After loading a saved board, keep new ids above every restored id
 export function ensureUidAbove(n) { if (Number.isFinite(n) && n >= _uid) _uid = n; }
+
+// Flip the nth GFM task checkbox in Markdown source (Write preview)
+export function toggleTaskAtIndex(text, idx) {
+  let n = -1;
+  return String(text || '').replace(/^(\s*[-*+] \[)([ xX])(\])/gm, (m, a, b, c) => {
+    n += 1;
+    return n === idx ? a + (b === ' ' ? 'x' : ' ') + c : m;
+  });
+}

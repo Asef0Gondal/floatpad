@@ -16,6 +16,7 @@ import { createTauriWebview } from '../utils/tauriWebview';
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36';
 const STORAGE_URL = 'fp_browser_url';
 const STORAGE_BM = 'fp_bookmarks';
+const STORAGE_HIST = 'fp_history';
 const initUrl = localStorage.getItem(STORAGE_URL) || 'https://www.google.com';
 
 const READER_CSS = `
@@ -48,6 +49,17 @@ function loadBookmarks() {
 
 function saveBookmarks(bookmarks) {
   localStorage.setItem(STORAGE_BM, JSON.stringify(bookmarks));
+}
+
+function loadHistory() {
+  try { return JSON.parse(localStorage.getItem(STORAGE_HIST) || '[]'); } catch { return []; }
+}
+function pushHistory(url) {
+  if (!url || url === 'about:blank') return;
+  const hist = loadHistory();
+  if (hist[0]?.url === url) return;
+  const next = [{ url, ts: Date.now() }, ...hist.filter(h => h.url !== url)].slice(0, 50);
+  localStorage.setItem(STORAGE_HIST, JSON.stringify(next));
 }
 
 function getActiveVideoScript(body) {
@@ -87,6 +99,8 @@ export default function Browser({ active }) {
   const [readerMode, setReaderMode] = useState(false);
   const [bookmarks, setBookmarks] = useState(loadBookmarks);
   const [showBm, setShowBm] = useState(false);
+  const [showHist, setShowHist] = useState(false);
+  const [history, setHistory] = useState(loadHistory);
   const [ctxMenu, setCtxMenu] = useState(null);
   const [pageTitle, setPageTitle] = useState('');
   const [pageHasVideo, setPageHasVideo] = useState(false);
@@ -158,6 +172,8 @@ export default function Browser({ active }) {
         setUrlInput(url);
         setDisplayUrl(url);
         localStorage.setItem(STORAGE_URL, url);
+        pushHistory(url);
+        setHistory(loadHistory());
       }
       syncNav();
       refreshAdblockState(url);
@@ -461,6 +477,14 @@ export default function Browser({ active }) {
           +
         </button>
 
+        <button
+          className={`nav-btn${showHist ? ' on' : ''}`}
+          onClick={() => { setShowHist(v => !v); setHistory(loadHistory()); }}
+          title="Recent history"
+        >
+          🕘
+        </button>
+
         <button className="nav-btn" onClick={() => navigate(urlInput)} title="Go">
           ↵
         </button>
@@ -498,6 +522,22 @@ export default function Browser({ active }) {
               </button>
             </div>
           ))}
+        </div>
+      )}
+
+      {showHist && (
+        <div className="bm-bar hist-bar">
+          {history.length === 0 && <span className="hist-empty">No history yet</span>}
+          {history.map(h => (
+            <div key={h.url + h.ts} className="bm-pill">
+              <button className="bm-pill-load" onClick={() => { navigate(h.url); setShowHist(false); }} title={h.url}>
+                {(() => { try { const u = new URL(h.url); return u.hostname + (u.pathname !== '/' ? u.pathname.slice(0, 24) : ''); } catch { return h.url.slice(0, 40); } })()}
+              </button>
+            </div>
+          ))}
+          {history.length > 0 && (
+            <button className="hist-clear" onClick={() => { localStorage.removeItem(STORAGE_HIST); setHistory([]); }}>Clear</button>
+          )}
         </div>
       )}
 

@@ -58,3 +58,17 @@ describe('uid', () => {
     expect(uid()).not.toBe(uid());
   });
 });
+describe('toggleTaskAtIndex', () => {
+  const md = '- [ ] first\n  - [x] second\n* [ ] third\ntext';
+  it('flips the nth task only', async () => {
+    const { toggleTaskAtIndex } = await import('../src/utils/helpers');
+    expect(toggleTaskAtIndex(md, 0)).toBe('- [x] first\n  - [x] second\n* [ ] third\ntext');
+    expect(toggleTaskAtIndex(md, 1)).toBe('- [ ] first\n  - [ ] second\n* [ ] third\ntext');
+    expect(toggleTaskAtIndex(md, 2)).toContain('* [x] third');
+  });
+  it('is a no-op out of range', async () => {
+    const { toggleTaskAtIndex } = await import('../src/utils/helpers');
+    expect(toggleTaskAtIndex(md, 9)).toBe(md);
+    expect(toggleTaskAtIndex('', 0)).toBe('');
+  });
+});

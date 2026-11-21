@@ -6,6 +6,24 @@ import { getCurrentWindow } from '@tauri-apps/api/window';
 
 let evalSeq = 0;
 
+/** One-shot executeJavaScript against any app webview, with result (scraping etc.). */
+export function evalInWebview(label, script, timeoutMs = 12000) {
+  return new Promise((resolve, reject) => {
+    const id = ++evalSeq;
+    let un = null;
+    let settled = false;
+    const finish = (fn, arg) => { if (!settled) { settled = true; un?.(); fn(arg); } };
+    listen('web-eval-result', e => {
+      if (e.payload?.id !== id) return;
+      if (e.payload.error) finish(reject, new Error(e.payload.error));
+      else { try { finish(resolve, e.payload.result ? JSON.parse(e.payload.result) : null); } catch { finish(resolve, null); } }
+    }).then(f => { un = f; if (settled) f(); });
+    setTimeout(() => finish(reject, new Error('eval timeout')), timeoutMs);
+    const wrapped = `(async () => { try { const r = await eval(${JSON.stringify(script)}); window.__TAURI_INTERNALS__.invoke('web_eval_result', { id: ${id}, result: JSON.stringify(r === undefined ? null : r) }); } catch (e) { try { window.__TAURI_INTERNALS__.invoke('web_eval_result', { id: ${id}, error: String((e && e.message) || e) }); } catch {} } })();`;
+    invoke('web_eval', { label, script: wrapped }).catch(e => finish(reject, e));
+  });
+}
+
 export function createTauriWebview({ host, url }) {
   const winLabel = getCurrentWindow().label;
   const label = 'web-' + winLabel;

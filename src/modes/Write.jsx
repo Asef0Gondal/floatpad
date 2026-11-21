@@ -1,7 +1,12 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { marked } from 'marked';
+import DOMPurify from 'dompurify';
 import { IconSave, IconFolder, IconWrite } from '../components/Icons';
 
 import { ipcRenderer } from '../ipc';
+import { toggleTaskAtIndex } from '../utils/helpers';
+
+marked.setOptions({ gfm: true, breaks: true });
 
 const AUTOSAVE_KEY  = 'fp_write_content';
 const MODE_KEY      = 'fp_write_mode';
@@ -42,6 +47,30 @@ export default function Write({ active }) {
   const [timerSecs,  setTimerSecs]  = useState(25 * 60);
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerLabel,   setTimerLabel]   = useState('25:00');
+  const [preview,      setPreview]      = useState(() => localStorage.getItem('fp_write_preview') === '1');
+  const previewRef = useRef(null);
+
+  useEffect(() => { localStorage.setItem('fp_write_preview', preview ? '1' : '0'); }, [preview]);
+
+  // Live Markdown (Markraft/Tot parity) — sanitized, GFM tables + task lists
+  const rendered = useMemo(
+    () => DOMPurify.sanitize(marked.parse(content || '')),
+    [content]
+  );
+
+  // Click a task checkbox in preview → flip the nth [ ]/[x] in the source
+  useEffect(() => {
+    if (!preview || !previewRef.current) return undefined;
+    const boxes = previewRef.current.querySelectorAll('input[type="checkbox"]');
+    const handlers = [];
+    boxes.forEach((box, idx) => {
+      box.disabled = false;
+      const h = () => setContent(prev => toggleTaskAtIndex(prev, idx));
+      box.addEventListener('change', h);
+      handlers.push([box, h]);
+    });
+    return () => handlers.forEach(([box, h]) => box.removeEventListener('change', h));
+  }, [preview, rendered]);
 
   // ── Stats ─────────────────────────────────────────────────
   const updateStats = useCallback((text) => {
@@ -194,6 +223,19 @@ export default function Write({ active }) {
           </div>
         )}
 
+        {writeMode==='md' && (
+          <>
+            <div className="tb-tool-sep"/>
+            <button
+              className={`tb-tool${preview?' active':''}`}
+              onClick={()=>setPreview(p=>!p)}
+              title="Live Markdown preview — click checkboxes to toggle tasks"
+            >
+              {preview ? '✎ Edit' : '👁 Preview'}
+            </button>
+          </>
+        )}
+
         <div className="tb-tool-sep"/>
 
         <button className="tb-tool" onClick={saveFile} title="Save file">
@@ -212,18 +254,26 @@ export default function Write({ active }) {
         </span>
       </div>
 
-      {/* Editor */}
+      {/* Editor / live preview */}
       <div className="write-body">
-        <textarea
-          ref={editorRef}
-          className={`write-editor${writeMode==='script'?' screenplay':''}`}
-          value={content}
-          onChange={onInput}
-          onKeyDown={onKeyDown}
-          placeholder={placeholder}
-          spellCheck={writeMode==='md'}
-          style={writeMode==='script' ? { ...currentSpType.style } : {}}
-        />
+        {preview && writeMode==='md' ? (
+          <div
+            ref={previewRef}
+            className="write-preview"
+            dangerouslySetInnerHTML={{ __html: rendered }}
+          />
+        ) : (
+          <textarea
+            ref={editorRef}
+            className={`write-editor${writeMode==='script'?' screenplay':''}`}
+            value={content}
+            onChange={onInput}
+            onKeyDown={onKeyDown}
+            placeholder={placeholder}
+            spellCheck={writeMode==='md'}
+            style={writeMode==='script' ? { ...currentSpType.style } : {}}
+          />
+        )}
       </div>
 
       {/* Status bar */}

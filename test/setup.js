@@ -12,6 +12,10 @@ globalThis.window = {
     }),
     transformCallback: vi.fn(() => 1),
     convertFileSrc: (p, proto = 'asset') => `${proto}://localhost/${encodeURIComponent(p)}`,
+    metadata: {
+      currentWindow: { label: 'main' },
+      currentWebview: { windowLabel: 'main', label: 'main' },
+    },
   },
   require: () => {
     throw new Error('Electron require must not run under Tauri');

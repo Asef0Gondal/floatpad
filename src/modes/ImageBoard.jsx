@@ -1,4 +1,5 @@
 import React, { useEffect, useRef, useState, useCallback } from 'react';
+import { listen } from '@tauri-apps/api/event';
 import {
   IconCamera,
   IconEyedrop,
@@ -16,7 +17,8 @@ import {
   alignImages, distributeImages, normalizeImages, stackImages, packImages, duplicateImages,
 } from '../utils/boardArrange';
 
-import { ipcRenderer } from '../ipc';
+import { ipcRenderer, isTauri } from '../ipc';
+import { evalInWebview } from '../utils/tauriWebview';
 
 const EXPORT_PADDING = 48;
 const LABEL_WIDTH = 180;
@@ -378,6 +380,7 @@ export default function ImageBoard({ active }) {
   const [slideshow, setSlideshow] = useState(false);
   const [showArrange, setShowArrange] = useState(false);
   const [ocr, setOcr] = useState(null);
+  const [scrapeBusy, setScrapeBusy] = useState(false);
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
@@ -1013,6 +1016,40 @@ export default function ImageBoard({ active }) {
     }
   }, []);
 
+  // ── Paste a URL → scrape every image off the page (PureRef) ──
+  const scrapeUrl = useCallback(async url => {
+    if (!isTauri) { await addImage(url, null, null, url); return; }
+    setScrapeBusy(true);
+    const label = 'web-scrape';
+    try {
+      await ipcRenderer.invoke('web-destroy', label).catch(() => {});
+      const loaded = new Promise(resolve => {
+        let un = null;
+        const timer = setTimeout(() => { un?.(); resolve(); }, 15000);
+        listen('web-event', e => {
+          if (e.payload?.label === label && e.payload.kind === 'load-stop') {
+            clearTimeout(timer);
+            un?.();
+            resolve();
+          }
+        }).then(f => { un = f; });
+      });
+      await ipcRenderer.invoke('web-create', label, url);
+      await loaded;
+      const srcs = await evalInWebview(
+        label,
+        `Array.from(document.images).map(i => i.currentSrc || i.src).filter(s => s && s.startsWith('http'))`
+      );
+      await ipcRenderer.invoke('web-destroy', label).catch(() => {});
+      const unique = [...new Set(srcs || [])].slice(0, 40);
+      for (const src of unique) await addImage(src, null, null, url);
+    } catch (e) {
+      console.warn('FloatPad: URL scrape failed', e);
+      ipcRenderer.invoke('web-destroy', label).catch(() => {});
+    }
+    setScrapeBusy(false);
+  }, [addImage]);
+
   // ── OCR + data detection (ScreenFloat parity, on any image) ──
   const runOcr = useCallback(async img => {
     setOcr({ busy: true });
@@ -1184,13 +1221,19 @@ export default function ImageBoard({ active }) {
             const dataUrl = await blobToDataUrl(file);
             await addImage(dataUrl, null, null);
           }
-          break;
+          return;
         }
+      }
+      // No image on the clipboard → a pasted URL scrapes the page's images
+      const text = e.clipboardData.getData('text/plain').trim();
+      if (/^https?:\/\/\S+$/i.test(text) || /^[\w-][\w-]*(\.\w{2,})+\S*$/i.test(text)) {
+        const url = /^https?:\/\//i.test(text) ? text : 'https://' + text;
+        await scrapeUrl(url);
       }
     };
     window.addEventListener('paste', h);
     return () => window.removeEventListener('paste', h);
-  }, [addImage, active]);
+  }, [addImage, active, scrapeUrl]);
 
   useEffect(() => {
     const onKeyDown = e => {
@@ -1711,7 +1754,7 @@ export default function ImageBoard({ active }) {
 
         <div className="tb-tool-spacer"/>
         <span className="tb-tool-info">
-          {zoom}% · {images.length} img · {notes.length} note{notes.length === 1 ? '' : 's'} · {visibleAnnotationCount} mark{visibleAnnotationCount === 1 ? '' : 's'}
+          {scrapeBusy ? 'scraping URL… · ' : ''}{zoom}% · {images.length} img · {notes.length} note{notes.length === 1 ? '' : 's'} · {visibleAnnotationCount} mark{visibleAnnotationCount === 1 ? '' : 's'}
         </span>
       </div>
 

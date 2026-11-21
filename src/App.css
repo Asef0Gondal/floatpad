@@ -1097,3 +1097,45 @@ kbd {
 }
 .shot-view:hover .shot-close { opacity: 1; }
 .shot-close:hover { background: rgba(200,60,60,0.85); color: #fff; }
+
+/* ── Write: live Markdown preview ── */
+.write-preview {
+  flex: 1; overflow-y: auto; padding: 18px 22px;
+  color: var(--fp-text, #ddd); font-size: 14px; line-height: 1.65;
+}
+.write-preview h1, .write-preview h2, .write-preview h3 { margin: 0.8em 0 0.4em; line-height: 1.3; }
+.write-preview h1 { font-size: 1.6em; border-bottom: 1px solid rgba(128,128,128,0.25); padding-bottom: 0.25em; }
+.write-preview h2 { font-size: 1.3em; }
+.write-preview p { margin: 0.5em 0; }
+.write-preview a { color: var(--fp-accent, #4a90e2); }
+.write-preview code {
+  background: rgba(128,128,128,0.16); border-radius: 4px;
+  padding: 1px 5px; font-family: ui-monospace, monospace; font-size: 0.9em;
+}
+.write-preview pre {
+  background: rgba(128,128,128,0.12); border-radius: 8px;
+  padding: 12px 14px; overflow-x: auto;
+}
+.write-preview pre code { background: none; padding: 0; }
+.write-preview blockquote {
+  margin: 0.6em 0; padding: 2px 14px;
+  border-left: 3px solid var(--fp-accent, #4a90e2); opacity: 0.85;
+}
+.write-preview ul, .write-preview ol { padding-left: 1.5em; margin: 0.5em 0; }
+.write-preview li { margin: 0.2em 0; }
+.write-preview li:has(> input[type="checkbox"]) { list-style: none; margin-left: -1.2em; }
+.write-preview input[type="checkbox"] { margin-right: 7px; cursor: pointer; accent-color: var(--fp-accent, #4a90e2); }
+.write-preview table { border-collapse: collapse; margin: 0.7em 0; }
+.write-preview th, .write-preview td { border: 1px solid rgba(128,128,128,0.3); padding: 5px 11px; }
+.write-preview th { background: rgba(128,128,128,0.12); }
+.write-preview img { max-width: 100%; border-radius: 6px; }
+.write-preview hr { border: none; border-top: 1px solid rgba(128,128,128,0.25); margin: 1.2em 0; }
+
+/* ── Browser: history dropdown ── */
+.hist-bar { flex-wrap: wrap; max-height: 110px; overflow-y: auto; }
+.hist-empty { color: #777; font-size: 11px; padding: 4px 8px; }
+.hist-clear {
+  background: transparent; border: 1px solid rgba(255,255,255,0.15); color: #999;
+  border-radius: 12px; padding: 3px 10px; font-size: 11px; cursor: pointer; margin: 2px 4px;
+}
+.hist-clear:hover { color: #fff; border-color: rgba(255,255,255,0.35); }

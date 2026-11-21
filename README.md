@@ -53,6 +53,12 @@ Built for video editors, designers and developers who need a second screen that 
 - Drag an image out to Finder / Figma using the corner handle
 - Save and reload boards as `.floatpad` files; export the whole board as PNG or JPEG
 - Capture any screen region with `⌘⇧S` and drop it straight onto the board
+- **Paste a URL** → every image on that page lands on the board
+- **Focus mode**: double-click an image (or `F`) to zoom in, `←`/`→` to step, `Esc` to exit, built-in slideshow
+- **Arrange**: align, distribute, normalize height/width/size, stack, shelf-pack (optimal / by name / by addition)
+- **Per-image powers**: flip, rotate, grayscale (`⌥G`), opacity, lock, duplicate (`⌘D`), reset, open source
+- **OCR any image** (`T`): extracted text with one-click copy, plus detected links, emails and phone numbers (macOS Vision)
+- **Float any image as a shot** (`⧉`): its own frameless always-on-top mini window
 
 ### Video
 
@@ -68,6 +74,7 @@ Built for video editors, designers and developers who need a second screen that 
 - Embedded Chromium (`webview`) — YouTube, documentation, Notion and most sites work normally
 - URL bar with back / forward / reload, plus persistent bookmarks (`⌘D`, `⌘1–9`)
 - **Reader mode** strips page clutter for long-form reading
+- **History** dropdown with the last 50 pages
 - **Ad and tracker blocking** at the session level, with a per-site allowlist toggle
 - Right-click any image to send it to the Board
 - Step through embedded video frame-by-frame and grab a frame to the Board
@@ -75,14 +82,15 @@ Built for video editors, designers and developers who need a second screen that 
 ### Write
 
 - **Screenplay mode**: `Tab` cycles element types — SCENE → Action → CHARACTER → Dialogue → (parenthetical) — with automatic uppercase scene headings
-- **Markdown / freeform mode** for notes and drafts
+- **Markdown / freeform mode** with **live preview** — GFM tables, code, and task lists whose checkboxes you can click right in the preview
 - Live word/page statistics, autoreload of the last document, and autosave to local storage
 - Open and save `.txt`, `.md` and Fountain files through native dialogs
 - Built-in 25-minute focus timer
 
 ## Window & workflow
 
-- **Always on top**, visible on every Space, including full-screen apps
+- **Always on top**, visible on every Space, including full-screen apps — or **always on bottom** (interactable wallpaper)
+- **Lock the window position** so it can't be dragged accidentally
 - **Opacity** slider from 100% down to 15%
 - **Detach** toggles click-through, with mouse events forwarded to the window underneath
 - **Mini mode** collapses the window to its title bar for a near-invisible strip
@@ -146,6 +154,8 @@ FloatPad is a Tauri 2 app: a native Rust core with the system webview rendering 
 ### Known differences from the Electron v1
 
 - **Ad blocking** is network-level on macOS (WKContentRuleList, same host list and per-site allowlist as v1) plus ad-element hiding everywhere; on Windows/Linux it is element-level only for now.
+- **OCR** uses the macOS Vision framework; other platforms get a clear message (Windows.Media.Ocr is the planned path).
+- **Window-position lock** is macOS only for now.
 - **Detach (click-through)** does not forward hover events to the window underneath; tray → Show or `⌘⇧Space` always restores control.
 - **Window opacity** is macOS/Windows only for now (no-op on Linux).
 - **Opacity sliders on undocked panels** now affect their own window (v1 always changed the main window).

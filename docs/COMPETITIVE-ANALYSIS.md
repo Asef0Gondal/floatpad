@@ -32,26 +32,26 @@ Legend: ✅ have · 🔶 partial · ❌ missing · — not applicable
 | **Video player (loop/frame-step/grab)** | ✅ | ❌ | ❌ | 🔶 web only | 🔶 recordings | — |
 | **Embedded web browser** | ✅ | ❌ | ❌ | ✅ | ❌ | — |
 | **Writing pad (screenplay/md)** | ✅ | 🔶 notes | 🔶 notes | ❌ | ❌ | ✅ |
-| Image rotate / flip / grayscale | ❌ | ✅ | ✅ | — | ✅ rotate | — |
+| Image rotate / flip / grayscale | ✅ | ✅ | ✅ | — | ✅ rotate | — |
 | Crop (non-destructive) | ❌ | ✅ | ✅ | — | ✅ | — |
-| Focus mode (zoom-to-image, step ←/→) | ❌ | ✅ | ✅ | — | — | — |
-| Arrange: align/distribute/normalize/stack/pack | ❌ | ✅ | ✅ mass | — | — | — |
-| Duplicate / lock item / open source | ❌ | ✅ | 🔶 | — | — | — |
+| Focus mode (zoom-to-image, step ←/→) | ✅ | ✅ | ✅ | — | — | — |
+| Arrange: align/distribute/normalize/stack/pack | ✅ | ✅ | ✅ mass | — | — | — |
+| Duplicate / lock item / open source | ✅ | ✅ | 🔶 | — | — | — |
 | Groups + hierarchy tree | ❌ | ✅ 2.0 | ❌ | — | ✅ folders | — |
 | GIF playback + frame scrub | ❌ | ✅ 2.0 | ❌ | — | — | — |
-| Slideshow | ❌ | ✅ | ❌ | — | — | — |
-| URL paste → scrape page images | ❌ | ✅ | ❌ | — | — | — |
-| Overlay mode: per-image floating windows | 🔶 panels | ✅ | ❌ | — | ✅ core | — |
-| Always-on-bottom (wallpaper mode) | ❌ | ✅ | ❌ | — | — | — |
-| Lock window position | ❌ | ✅ | ❌ | — | ✅ | — |
+| Slideshow | ✅ | ✅ | ❌ | — | — | — |
+| URL paste → scrape page images | ✅ | ✅ | ❌ | — | — | — |
+| Overlay mode: per-image floating windows | ✅ shots | ✅ | ❌ | — | ✅ core | — |
+| Always-on-bottom (wallpaper mode) | ✅ | ✅ | ❌ | — | — | — |
+| Lock window position | ✅ macOS | ✅ | ❌ | — | ✅ | — |
 | Pixel-art nearest-neighbor sampling | ❌ | ✅ | ❌ | — | — | — |
-| **OCR / data detection (text, links, QR)** | ❌ | ❌ | ❌ | — | ✅ killer | — |
+| **OCR / data detection (text, links, emails, phones)** | ✅ macOS (QR later) | ❌ | ❌ | — | ✅ killer | — |
 | Shot library: tags/search/smart folders | ❌ | ❌ | ❌ | — | ✅ | — |
 | Screen recording | ❌ | ❌ | ❌ | — | ✅ | — |
-| Live Markdown (Typora-style) | ❌ | — | — | — | — | ✅ Markraft |
+| Live Markdown preview + interactive tasks | ✅ | — | — | — | — | ✅ Markraft |
 | Multi-note dots / plain .md folder | 🔶 | — | — | — | — | ✅ |
 | Global hotkey scratchpad | ✅ app-level | — | — | — | — | ✅ ⌥N |
-| Browser bookmarks/reader/adblock | ✅ | — | — | 🔶 | — | — |
+| Browser bookmarks/reader/adblock/history | ✅ | — | — | 🔶 | — | — |
 | Potato/low-resource mode | ✅ | ❌ | ❌ | ❌ | ❌ | — |
 
 ## Where we already win
@@ -62,7 +62,7 @@ text-only. Our adblock, screenplay mode, A-B loop and potato mode are unique.
 
 ## Gap-closing roadmap (priority = competitor-kill value ÷ effort)
 
-### Tier 1 — do now
+### Tier 1 — ✅ SHIPPED (v2.1.0)
 1. **Image transforms**: flip H/V, grayscale, rotate 90°, reset transform (PureRef/BeeRef core; render flags, persisted).
 2. **Focus mode**: Space/double-click zooms to selection, ←/→ steps images, Esc returns (PureRef's most-used flow).
 3. **Arrange & align**: align L/R/T/B/centers, distribute H/V, normalize height/width/size, stack, pack-optimal, arrange by name/addition (PureRef + BeeRef mass-arrange).
@@ -72,13 +72,13 @@ text-only. Our adblock, screenplay mode, A-B loop and potato mode are unique.
 7. **Always-on-bottom + lock window position** (PureRef wallpaper mode; cheap Rust).
 8. **Slideshow** (focus mode + timer; cheap once #2 lands).
 
-### Tier 2 — next
-9. Write mode: live Markdown preview + task checkboxes + .md folder workflow (Markraft/Tot parity).
-10. Browser history list (Helium parity).
-11. GIF playback with frame step/scrub (PureRef 2.0).
-12. URL paste → scrape all page images onto board (PureRef).
-13. Pixel-art sampling toggle; image comments; replace image.
-14. Shot library: tags + search over saved boards/captures (ScreenFloat-lite).
+### Tier 2 — partially shipped
+9. ✅ Write mode: live Markdown preview + interactive task checkboxes (Markraft/Tot parity). Remaining: .md folder workflow.
+10. ✅ Browser history list (Helium parity).
+11. ❌ GIF playback with frame step/scrub (PureRef 2.0) — needs frame extraction (WebCodecs ImageDecoder or Rust gif crate).
+12. ✅ URL paste → scrape all page images onto board (PureRef) — hidden webview + eval channel.
+13. ❌ Pixel-art sampling toggle; image comments; replace image.
+14. ❌ Shot library: tags + search over saved boards/captures (ScreenFloat-lite).
 
 ### Tier 3 — architectural, later
 15. Groups + hierarchy panel (PureRef 2.0).
