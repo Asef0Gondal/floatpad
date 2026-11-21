@@ -1,5 +1,6 @@
 mod adblock;
 mod commands;
+mod ocr;
 mod platform;
 mod selftest;
 
@@ -227,6 +228,7 @@ pub fn run() {
             commands::web_eval_result,
             commands::web_page_event,
             commands::log_js,
+            commands::ocr_image,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FloatPad");

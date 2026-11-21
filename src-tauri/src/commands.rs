@@ -554,6 +554,22 @@ pub async fn web_eval(app: AppHandle, label: String, script: String) {
     }
 }
 
+/// OCR a board image (data URL) → recognized text. macOS Vision, off-main.
+#[tauri::command]
+pub async fn ocr_image(data_url: String) -> Result<Value, String> {
+    let b64 = data_url
+        .split_once("base64,")
+        .map(|(_, b)| b)
+        .unwrap_or(&data_url);
+    let bytes = base64::engine::general_purpose::STANDARD
+        .decode(b64)
+        .map_err(|e| e.to_string())?;
+    let text = tauri::async_runtime::spawn_blocking(move || crate::ocr::recognize(&bytes))
+        .await
+        .map_err(|e| e.to_string())??;
+    Ok(json!({ "text": text }))
+}
+
 /// Callback channel: injected page script returns executeJavaScript results here.
 #[tauri::command]
 pub async fn web_eval_result(

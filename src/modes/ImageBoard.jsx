@@ -377,6 +377,7 @@ export default function ImageBoard({ active }) {
   const [focusId, setFocusId] = useState(null);
   const [slideshow, setSlideshow] = useState(false);
   const [showArrange, setShowArrange] = useState(false);
+  const [ocr, setOcr] = useState(null);
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
@@ -1012,6 +1013,24 @@ export default function ImageBoard({ active }) {
     }
   }, []);
 
+  // ── OCR + data detection (ScreenFloat parity, on any image) ──
+  const runOcr = useCallback(async img => {
+    setOcr({ busy: true });
+    try {
+      const res = await ipcRenderer.invoke('ocr-image', img.src);
+      const text = res?.text || '';
+      const uniq = a => [...new Set(a)];
+      const links = uniq(text.match(/https?:\/\/[^\s<>"')\]]+/g) || []);
+      const emails = uniq(text.match(/[\w.+-]+@[\w-]+\.[\w.]+/g) || []);
+      const phones = uniq(text.match(/\+?\d[\d\s().-]{7,}\d/g) || [])
+        .map(p => p.trim())
+        .filter(p => p.replace(/\D/g, '').length >= 8);
+      setOcr({ text, links, emails, phones });
+    } catch (e) {
+      setOcr({ error: String(e?.message || e) });
+    }
+  }, []);
+
   // ── Focus mode + slideshow (PureRef's most-used flow) ─────
   const enterFocus = useCallback(id => {
     const img = imagesRef.current.find(i => i.id === id);
@@ -1585,6 +1604,9 @@ export default function ImageBoard({ active }) {
                 <button className="tb-tool" onClick={() => enterFocus(singleSelectedImage.id)} title="Focus this image  F · ←/→ to step · Esc to exit">
                   ⤢ Focus
                 </button>
+                <button className="tb-tool" onClick={() => runOcr(singleSelectedImage)} title="Extract text (OCR)">
+                  T OCR
+                </button>
                 <button className="tb-tool" onClick={() => resetTransform(singleSelectedImage.id)} title="Reset transform">
                   ⟲ Reset
                 </button>
@@ -1812,6 +1834,16 @@ export default function ImageBoard({ active }) {
                       className="bia-btn"
                       onClick={e => {
                         e.stopPropagation();
+                        runOcr(img);
+                      }}
+                      title="Extract text (OCR) + detect links, emails, phones"
+                    >
+                      T
+                    </button>
+                    <button
+                      className="bia-btn"
+                      onClick={e => {
+                        e.stopPropagation();
                         setImages(prev => prev.map(image => (
                           image.id === img.id ? { ...image, gray: !image.gray } : image
                         )));
@@ -1911,6 +1943,39 @@ export default function ImageBoard({ active }) {
 
         {rubberBand && rbStyle && (
           <div className="rubber-band" style={rbStyle}/>
+        )}
+
+        {ocr && (
+          <div className="ocr-panel">
+            <div className="ocr-head">
+              <span>{ocr.busy ? 'Reading text…' : ocr.error ? 'OCR failed' : 'Extracted text'}</span>
+              <button className="ocr-close" onClick={() => setOcr(null)}>✕</button>
+            </div>
+            {ocr.error && <div className="ocr-error">{ocr.error}</div>}
+            {!ocr.busy && !ocr.error && (
+              <>
+                <textarea className="ocr-text" readOnly value={ocr.text || '(no text found)'} />
+                <div className="ocr-actions">
+                  <button onClick={() => navigator.clipboard.writeText(ocr.text || '').catch(() => {})}>Copy text</button>
+                </div>
+                {(ocr.links?.length > 0 || ocr.emails?.length > 0 || ocr.phones?.length > 0) && (
+                  <div className="ocr-detected">
+                    {ocr.links.map(l => (
+                      <button key={l} className="ocr-chip" title="Open link" onClick={() => ipcRenderer.invoke('open-external', l)}>
+                        🔗 {l.length > 42 ? l.slice(0, 42) + '…' : l}
+                      </button>
+                    ))}
+                    {ocr.emails.map(m => (
+                      <button key={m} className="ocr-chip" title="Copy email" onClick={() => navigator.clipboard.writeText(m).catch(() => {})}>✉ {m}</button>
+                    ))}
+                    {ocr.phones.map(p => (
+                      <button key={p} className="ocr-chip" title="Copy number" onClick={() => navigator.clipboard.writeText(p).catch(() => {})}>☎ {p}</button>
+                    ))}
+                  </div>
+                )}
+              </>
+            )}
+          </div>
         )}
 
         {focusId && (

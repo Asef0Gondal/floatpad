@@ -115,7 +115,18 @@ pub async fn run(app: AppHandle) {
 
     // 8. screen capture (needs Screen Recording permission; informational)
     match commands::capture_screen(app.clone()).await {
-        Some(url) => log::info!("SELFTEST PASS: capture_screen ({} bytes)", url.len()),
+        Some(url) => {
+            log::info!("SELFTEST PASS: capture_screen ({} bytes)", url.len());
+            // 8b. OCR end-to-end: recognize text in the live capture
+            match commands::ocr_image(url).await {
+                Ok(v) => {
+                    let text = v["text"].as_str().unwrap_or("");
+                    let preview: String = text.chars().take(60).collect();
+                    log::info!("SELFTEST PASS: OCR pipeline ({} chars: {preview:?})", text.len());
+                }
+                Err(e) => log::error!("SELFTEST FAIL: OCR pipeline: {e}"),
+            }
+        }
         None => log::warn!("SELFTEST SKIP: capture_screen returned None (Screen Recording permission?)"),
     }
 

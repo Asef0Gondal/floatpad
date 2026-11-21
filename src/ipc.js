@@ -106,6 +106,7 @@ const JS_INVOKE = {
 
 // invoke() channels served by Rust
 const RUST_INVOKE = {
+  'ocr-image': ['ocr_image', (dataUrl) => ({ dataUrl })],
   'reveal-path': ['reveal_path', (path) => ({ path })],
   'open-external': ['open_external', (url) => ({ url })],
   'win-always-bottom': ['win_always_bottom', (on) => ({ on })],

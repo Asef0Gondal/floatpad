@@ -32,6 +32,7 @@ fn main() {
                 "web_eval_result",
                 "web_page_event",
                 "log_js",
+                "ocr_image",
             ]),
         ),
     )

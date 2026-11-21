@@ -1048,3 +1048,37 @@ kbd {
 .focus-btn.on { background: var(--fp-accent, #4a90e2); color: #fff; }
 .focus-count { color: #999; font-size: 11px; min-width: 44px; text-align: center; }
 .board-arrange-menu { max-height: 320px; overflow-y: auto; min-width: 190px; }
+
+/* ── OCR panel (ScreenFloat parity) ── */
+.ocr-panel {
+  position: absolute; right: 14px; bottom: 14px; width: 320px; max-height: 60%;
+  display: flex; flex-direction: column; z-index: 70;
+  background: rgba(18,18,22,0.95); border: 1px solid rgba(255,255,255,0.14);
+  border-radius: 10px; overflow: hidden; backdrop-filter: blur(10px);
+}
+.ocr-head {
+  display: flex; justify-content: space-between; align-items: center;
+  padding: 7px 10px; font-size: 12px; color: #ddd;
+  border-bottom: 1px solid rgba(255,255,255,0.1);
+}
+.ocr-close { background: none; border: none; color: #999; cursor: pointer; font-size: 12px; }
+.ocr-close:hover { color: #fff; }
+.ocr-error { padding: 10px; color: #e08080; font-size: 12px; }
+.ocr-text {
+  flex: 1; min-height: 90px; max-height: 200px; resize: vertical;
+  background: transparent; border: none; outline: none;
+  color: #ccc; font-size: 12px; padding: 8px 10px;
+  font-family: ui-monospace, monospace;
+}
+.ocr-actions { padding: 6px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+.ocr-actions button {
+  background: var(--fp-accent, #4a90e2); color: #fff; border: none;
+  border-radius: 6px; padding: 4px 12px; font-size: 12px; cursor: pointer;
+}
+.ocr-detected { display: flex; flex-wrap: wrap; gap: 5px; padding: 8px 10px; border-top: 1px solid rgba(255,255,255,0.08); }
+.ocr-chip {
+  background: rgba(255,255,255,0.08); border: 1px solid rgba(255,255,255,0.12);
+  color: #bbb; border-radius: 12px; padding: 3px 9px; font-size: 11px;
+  cursor: pointer; max-width: 100%; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+.ocr-chip:hover { background: rgba(255,255,255,0.16); color: #fff; }

@@ -35,7 +35,10 @@ xcap = "0.9.10"
 block2 = "0.6.2"
 objc2 = "0.6.5"
 objc2-app-kit = { version = "0.3.2", features = ["NSWindow", "NSResponder", "NSGraphics", "NSApplication", "NSRunningApplication"] }
+objc2-core-foundation = "0.3.2"
 objc2-foundation = "0.3.2"
+objc2-image-io = { version = "0.3.2", features = ["CGImageSource"] }
+objc2-vision = "0.3.2"
 objc2-web-kit = { version = "0.3.2", features = ["WKContentRuleList", "WKContentRuleListStore", "WKUserContentController", "WKWebViewConfiguration", "WKWebView", "block2"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]

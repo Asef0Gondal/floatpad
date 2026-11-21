@@ -39,6 +39,7 @@
     "allow-web-hide",
     "allow-web-destroy",
     "allow-web-eval",
-    "allow-log-js"
+    "allow-log-js",
+    "allow-ocr-image"
   ]
 }
