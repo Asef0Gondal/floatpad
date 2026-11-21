@@ -1,8 +1,8 @@
 {
   "name": "floatpad",
   "productName": "FloatPad",
-  "version": "2.0.0",
-  "description": "Lean always-on-top reference pad — board, video, web and write modes in one floating overlay. Rust/Tauri rewrite of the Electron original.",
+  "version": "2.1.0",
+  "description": "Lean always-on-top reference pad \u2014 board, video, web and write modes in one floating overlay. Rust/Tauri rewrite of the Electron original.",
   "author": "Asif Gondal",
   "license": "MIT",
   "repository": {
