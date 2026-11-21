@@ -142,6 +142,29 @@ Rules learned from the A-to-Z audit:
 - **Task toggle skips fenced code blocks** so preview checkboxes stay aligned
   with source (marked renders no checkbox inside code fences).
 
+## v2.1.5 — lean pass (applied the sound audit findings, rejected the forced ones)
+
+Applied: dead icons/commands removed; theme tokens → CSS `:root` vars (fixed an
+invalid light hex `#AEAB A4`); Write counts derived in render; vitest config
+merged; `img.decode()`; `tauri::Url`; `tauri-plugin-opener` (covers BOTH
+`open_url` and `reveal_item_in_dir`); overlays → native `<dialog>`.
+
+Rejected (would break features/security or re-open fixed bugs): removing
+DOMPurify (pasted-markdown XSS), network adblock, `ctx.filter` grayscale
+(absent in WKWebView), the selftest, the bounds debounce, regression tests.
+
+**Why Popover API (#15) was skipped:** `popover` elements render in the top
+layer, whose containing block is the viewport — so the menus'
+`position:absolute` relative to their `tb-menu-wrap` trigger would misposition.
+Correct anchoring needs CSS anchor positioning (Safari 26+) or manual JS, which
+negates the simplification. The existing ~5-line outside-click dismiss is already
+lean and correct. Lesson: a `native:` suggestion isn't a win if the native API's
+layout model fights the current design.
+
+**`<dialog>` gotcha:** an inline `onClose` prop changes identity every render;
+a `useEffect([onClose])` calling `showModal()` would re-run and throw on an
+already-open dialog. Use a mount-only effect + a ref to the latest onClose.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
