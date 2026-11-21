@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 
 const STEPS = [
   {
@@ -31,10 +31,17 @@ export default function Onboarding({ onDone }) {
   const [step, setStep] = useState(0);
   const s = STEPS[step];
   const isLast = step === STEPS.length - 1;
+  const ref = useRef(null);
+  useEffect(() => {
+    const d = ref.current;
+    d.showModal();
+    const onCancel = e => e.preventDefault(); // keep the intro open on Escape
+    d.addEventListener('cancel', onCancel);
+    return () => { d.removeEventListener('cancel', onCancel); d.close(); };
+  }, []);
 
   return (
-    <div className="onboarding-backdrop">
-      <div className="onboarding-card">
+    <dialog ref={ref} className="onboarding-card">
 
         <div className="ob-progress">
           {STEPS.map((_, i) => (
@@ -68,7 +75,6 @@ export default function Onboarding({ onDone }) {
         </div>
 
         <button className="ob-skip" onClick={onDone}>Skip intro</button>
-      </div>
-    </div>
+    </dialog>
   );
 }

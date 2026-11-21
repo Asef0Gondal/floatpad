@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 
 const SECTIONS = [
   { title: 'Global', rows: [
@@ -35,9 +35,18 @@ const SECTIONS = [
 ];
 
 export default function ShortcutsOverlay({ onClose }) {
+  const ref = useRef(null);
+  const closeRef = useRef(onClose);
+  closeRef.current = onClose;
+  useEffect(() => {
+    const d = ref.current;
+    d.showModal();
+    const onCancel = () => closeRef.current();
+    d.addEventListener('cancel', onCancel);
+    return () => { d.removeEventListener('cancel', onCancel); d.close(); };
+  }, []);
   return (
-    <div className="shortcuts-backdrop" onClick={onClose}>
-      <div className="shortcuts-panel" onClick={e => e.stopPropagation()}>
+    <dialog ref={ref} className="shortcuts-panel" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
         <div className="shortcuts-header">
           <span>Keyboard shortcuts</span>
           <button className="shortcuts-close" onClick={onClose}>✕</button>
@@ -57,7 +66,6 @@ export default function ShortcutsOverlay({ onClose }) {
             </div>
           ))}
         </div>
-      </div>
-    </div>
+    </dialog>
   );
 }
