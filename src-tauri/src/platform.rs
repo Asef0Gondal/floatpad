@@ -1,16 +1,17 @@
 // Platform-specific window niceties that Tauri's cross-platform API doesn't cover.
 // IMPORTANT: raw AppKit calls must run on the main thread — async Tauri commands
 // execute on worker threads, and macOS window management traps on off-main mutations.
-use tauri::WebviewWindow;
+use tauri::Window;
+
 
 #[cfg(target_os = "macos")]
-fn on_main(win: &WebviewWindow, f: impl FnOnce() + Send + 'static) {
+fn on_main(win: &Window, f: impl FnOnce() + Send + 'static) {
     let _ = win.run_on_main_thread(f);
 }
 
 /// Whole-window alpha (v1: BrowserWindow.setOpacity).
 #[cfg(target_os = "macos")]
-pub fn set_opacity(win: &WebviewWindow, alpha: f64) -> tauri::Result<()> {
+pub fn set_opacity(win: &Window, alpha: f64) -> tauri::Result<()> {
     use objc2_app_kit::NSWindow;
     let ptr = win.ns_window()? as *mut NSWindow;
     let ptr = ptr as usize; // send across threads; deref only on main
@@ -21,7 +22,7 @@ pub fn set_opacity(win: &WebviewWindow, alpha: f64) -> tauri::Result<()> {
 }
 
 #[cfg(target_os = "windows")]
-pub fn set_opacity(win: &WebviewWindow, alpha: f64) -> tauri::Result<()> {
+pub fn set_opacity(win: &Window, alpha: f64) -> tauri::Result<()> {
     use windows_sys::Win32::UI::WindowsAndMessaging::{
         GetWindowLongW, SetLayeredWindowAttributes, SetWindowLongW, GWL_EXSTYLE, LWA_ALPHA,
         WS_EX_LAYERED,
@@ -39,13 +40,13 @@ pub fn set_opacity(win: &WebviewWindow, alpha: f64) -> tauri::Result<()> {
 
 // shortcut: Linux window opacity is a no-op (GTK exposes no per-window alpha through tao); upgrade when tao adds it
 #[cfg(not(any(target_os = "macos", target_os = "windows")))]
-pub fn set_opacity(_win: &WebviewWindow, _alpha: f64) -> tauri::Result<()> {
+pub fn set_opacity(_win: &Window, _alpha: f64) -> tauri::Result<()> {
     Ok(())
 }
 
 /// Read back (alpha, ignoresMouseEvents) for the self-test. Main-thread dispatch + channel.
 #[cfg(target_os = "macos")]
-pub fn read_state(win: &WebviewWindow) -> (f64, bool) {
+pub fn read_state(win: &Window) -> (f64, bool) {
     use objc2_app_kit::NSWindow;
     let Ok(ptr) = win.ns_window() else { return (1.0, false) };
     let ptr = ptr as usize;
@@ -58,12 +59,12 @@ pub fn read_state(win: &WebviewWindow) -> (f64, bool) {
 }
 
 #[cfg(not(target_os = "macos"))]
-pub fn read_state(_win: &WebviewWindow) -> (f64, bool) {
+pub fn read_state(_win: &Window) -> (f64, bool) {
     (1.0, false)
 }
 
 /// Visible on every Space, including over full-screen apps (v1: setVisibleOnAllWorkspaces).
-pub fn decorate(win: &WebviewWindow) {
+pub fn decorate(win: &Window) {
     #[cfg(target_os = "macos")]
     {
         use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior};
@@ -87,7 +88,7 @@ pub fn decorate(win: &WebviewWindow) {
 }
 
 /// Screenshot overlay: above everything, screen-saver level (v1 parity).
-pub fn decorate_overlay(win: &WebviewWindow) {
+pub fn decorate_overlay(win: &Window) {
     decorate(win);
     #[cfg(target_os = "macos")]
     {

@@ -23,6 +23,7 @@ serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"
 tauri = { version = "2.12.7", features = ["unstable", "tray-icon", "image-png", "protocol-asset"] }
 tauri-plugin-dialog = "2.8.4"
+tauri-plugin-drag = "2.1.1"
 tauri-plugin-fs = "2.7.1"
 tauri-plugin-global-shortcut = "2.4.1"
 tauri-plugin-single-instance = "2.4.5"
@@ -31,8 +32,11 @@ url = "2.5.8"
 xcap = "0.9.10"
 
 [target.'cfg(target_os = "macos")'.dependencies]
+block2 = "0.6.2"
 objc2 = "0.6.5"
 objc2-app-kit = { version = "0.3.2", features = ["NSWindow", "NSResponder", "NSGraphics", "NSApplication", "NSRunningApplication"] }
+objc2-foundation = "0.3.2"
+objc2-web-kit = { version = "0.3.2", features = ["WKContentRuleList", "WKContentRuleListStore", "WKUserContentController", "WKWebViewConfiguration", "WKWebView", "block2"] }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows-sys = { version = "0.61.2", features = ["Win32_UI_WindowsAndMessaging", "Win32_Graphics_Gdi", "Win32_Foundation"] }

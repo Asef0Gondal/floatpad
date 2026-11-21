@@ -1,3 +1,4 @@
+mod adblock;
 mod commands;
 mod platform;
 mod selftest;
@@ -13,6 +14,9 @@ use tauri::{
 use tauri_plugin_global_shortcut::{Shortcut, ShortcutState};
 
 // ── Persisted prefs (same prefs.json shape as v1) ────────────────────────────
+// Lock + atomic write: move/resize events, panels and adblock toggles all
+// read-modify-write concurrently; without this, updates get lost or torn.
+static PREFS_LOCK: Mutex<()> = Mutex::new(());
 
 pub fn prefs_path(app: &tauri::AppHandle) -> PathBuf {
     app.path()
@@ -22,6 +26,7 @@ pub fn prefs_path(app: &tauri::AppHandle) -> PathBuf {
 }
 
 pub fn load_prefs(app: &tauri::AppHandle) -> Map<String, Value> {
+    let _guard = PREFS_LOCK.lock().unwrap();
     fs::read_to_string(prefs_path(app))
         .ok()
         .and_then(|s| serde_json::from_str::<Value>(&s).ok())
@@ -30,7 +35,12 @@ pub fn load_prefs(app: &tauri::AppHandle) -> Map<String, Value> {
 }
 
 pub fn save_prefs(app: &tauri::AppHandle, patch: Map<String, Value>) {
-    let mut prefs = load_prefs(app);
+    let _guard = PREFS_LOCK.lock().unwrap();
+    let mut prefs = fs::read_to_string(prefs_path(app))
+        .ok()
+        .and_then(|s| serde_json::from_str::<Value>(&s).ok())
+        .and_then(|v| v.as_object().cloned())
+        .unwrap_or_default();
     for (k, v) in patch {
         prefs.insert(k, v);
     }
@@ -38,7 +48,10 @@ pub fn save_prefs(app: &tauri::AppHandle, patch: Map<String, Value>) {
     if let Some(dir) = p.parent() {
         let _ = fs::create_dir_all(dir);
     }
-    let _ = fs::write(p, serde_json::to_string_pretty(&Value::Object(prefs)).unwrap_or_default());
+    let tmp = p.with_extension("json.tmp");
+    if fs::write(&tmp, serde_json::to_string_pretty(&Value::Object(prefs)).unwrap_or_default()).is_ok() {
+        let _ = fs::rename(&tmp, &p);
+    }
 }
 
 fn save_main_bounds(app: &tauri::AppHandle, win: &tauri::WebviewWindow, mini: &MiniState) {
@@ -74,6 +87,7 @@ pub fn run() {
         }))
         .plugin(tauri_plugin_dialog::init())
         .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_drag::init())
         .plugin(
             tauri_plugin_global_shortcut::Builder::new()
                 .with_shortcut(toggle)
@@ -102,6 +116,7 @@ pub fn run() {
 
             let handle = app.handle().clone();
             let prefs = load_prefs(&handle);
+            adblock::init(&handle, commands::allowed_hosts(&prefs));
             let num = |k: &str, d: f64| prefs.get(k).and_then(|v| v.as_f64()).unwrap_or(d);
 
             let mut builder = WebviewWindowBuilder::new(app, "main", WebviewUrl::App("index.html".into()))
@@ -115,7 +130,7 @@ pub fn run() {
                 builder = builder.position(num("x", 0.0), num("y", 0.0));
             }
             let win = builder.build()?;
-            platform::decorate(&win);
+            platform::decorate(&win.as_ref().window());
             let selftest_mode = std::env::var("FP_SELFTEST").is_ok();
             if !selftest_mode {
                 win.show()?;
@@ -130,6 +145,7 @@ pub fn run() {
                 }
                 WindowEvent::Focused(_) => {
                     let _ = w2.set_ignore_cursor_events(false);
+                    let _ = h.emit_to("main", "detach-cleared", ());
                 }
                 WindowEvent::Moved(_) | WindowEvent::Resized(_) => {
                     let mini = h.state::<MiniState>();
@@ -206,6 +222,7 @@ pub fn run() {
             commands::web_eval,
             commands::web_eval_result,
             commands::web_page_event,
+            commands::log_js,
         ])
         .run(tauri::generate_context!())
         .expect("error while running FloatPad");

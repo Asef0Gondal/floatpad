@@ -7,6 +7,7 @@
     "core:default",
     "core:window:allow-start-dragging",
     "dialog:default",
+    "drag:default",
     "fs:default",
     { "identifier": "fs:scope", "allow": [{ "path": "**" }] },
     "fs:allow-read-file",

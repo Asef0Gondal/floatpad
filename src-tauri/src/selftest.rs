@@ -11,6 +11,18 @@ macro_rules! check {
     };
 }
 
+/// Poll until `f` is true or timeout — avoids fixed-sleep races on window registration.
+async fn wait_for(mut f: impl FnMut() -> bool, ms: u64) -> bool {
+    let deadline = std::time::Instant::now() + std::time::Duration::from_millis(ms);
+    while std::time::Instant::now() < deadline {
+        if f() {
+            return true;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+    }
+    f()
+}
+
 pub async fn run(app: AppHandle) {
     tokio::time::sleep(std::time::Duration::from_millis(800)).await;
     log::info!("SELFTEST: start");
@@ -22,17 +34,17 @@ pub async fn run(app: AppHandle) {
     };
 
     // 1. opacity
-    let _ = platform::set_opacity(&win, 0.5);
-    let (alpha, _) = platform::read_state(&win);
+    let _ = platform::set_opacity(&win.as_ref().window(), 0.5);
+    let (alpha, _) = platform::read_state(&win.as_ref().window());
     check!((alpha - 0.5).abs() < 0.01, "opacity set/read ({alpha})");
-    let _ = platform::set_opacity(&win, 1.0);
+    let _ = platform::set_opacity(&win.as_ref().window(), 1.0);
 
     // 2. detach + escape hatch
     let _ = win.set_ignore_cursor_events(true);
-    let (_, ignoring) = platform::read_state(&win);
+    let (_, ignoring) = platform::read_state(&win.as_ref().window());
     check!(ignoring, "detach sets click-through");
     commands::show_all_windows(&app);
-    let (_, ignoring) = platform::read_state(&win);
+    let (_, ignoring) = platform::read_state(&win.as_ref().window());
     check!(!ignoring, "show_all clears click-through");
     let _ = win.hide(); // stay invisible for the rest of the test
 
@@ -52,19 +64,19 @@ pub async fn run(app: AppHandle) {
 
     // 5. screenshot overlay lifecycle (created hidden in selftest)
     commands::open_screenshot(&app);
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    check!(app.get_webview_window("screenshot").is_some(), "screenshot overlay created");
+    let a = app.clone();
+    check!(wait_for(move || a.get_webview_window("screenshot").is_some(), 3000).await, "screenshot overlay created");
     commands::screenshot_cancel(app.clone()).await;
-    tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-    check!(app.get_webview_window("screenshot").is_none(), "screenshot overlay closed");
+    let a = app.clone();
+    check!(wait_for(move || a.get_webview_window("screenshot").is_none(), 3000).await, "screenshot overlay closed");
 
     // 6. panel undock / dock-back (created hidden in selftest)
     commands::panel_undock(app.clone(), "write".into()).await;
-    tokio::time::sleep(std::time::Duration::from_millis(800)).await;
-    check!(app.get_webview_window("panel-write").is_some(), "panel-write created");
+    let a = app.clone();
+    check!(wait_for(move || a.get_webview_window("panel-write").is_some(), 3000).await, "panel-write created");
     commands::panel_dock_back(app.clone(), "write".into()).await;
-    tokio::time::sleep(std::time::Duration::from_millis(500)).await;
-    check!(app.get_webview_window("panel-write").is_none(), "panel-write docked back");
+    let a = app.clone();
+    check!(wait_for(move || a.get_webview_window("panel-write").is_none(), 3000).await, "panel-write docked back");
 
     // 7. embedded webview: create + executeJavaScript round-trip + destroy.
     //    This exercises the remote-URL capability chain (the riskiest part).
@@ -88,8 +100,8 @@ pub async fn run(app: AppHandle) {
             Err(_) => log::error!("SELFTEST FAIL: remote eval round-trip timed out (capability chain?)"),
         }
         commands::web_destroy(app.clone(), "web-selftest".into()).await;
-        tokio::time::sleep(std::time::Duration::from_millis(300)).await;
-        check!(app.get_webview("web-selftest").is_none(), "web_destroy");
+        let a = app.clone();
+        check!(wait_for(move || a.get_webview("web-selftest").is_none(), 3000).await, "web_destroy");
     }
 
     // 8. screen capture (needs Screen Recording permission; informational)
@@ -97,6 +109,17 @@ pub async fn run(app: AppHandle) {
         Some(url) => log::info!("SELFTEST PASS: capture_screen ({} bytes)", url.len()),
         None => log::warn!("SELFTEST SKIP: capture_screen returned None (Screen Recording permission?)"),
     }
+
+    // 9. ad-block allowlist round-trip + compiled network rule list
+    let st = commands::adblock_site_status(app.clone(), "https://example.com".into()).await;
+    check!(st["disabled"] == false, "adblock blocks by default");
+    let tg = commands::adblock_toggle_site(app.clone(), "https://example.com".into()).await;
+    check!(tg["disabled"] == true && tg["host"] == "example.com", "adblock toggle exempts host");
+    let st = commands::adblock_site_status(app.clone(), "https://example.com".into()).await;
+    check!(st["disabled"] == true, "adblock exemption persisted");
+    commands::adblock_toggle_site(app.clone(), "https://example.com".into()).await; // restore
+    #[cfg(target_os = "macos")]
+    check!(wait_for(|| crate::adblock::is_ready(), 3000).await, "WKContentRuleList compiled");
 
     log::info!("SELFTEST: done");
     app.exit(0);

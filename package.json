@@ -33,7 +33,9 @@
     "dev": "tauri dev",
     "build:app": "tauri build",
     "dist:linux": "tauri build --bundles deb,appimage",
-    "start:electron": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\""
+    "start:electron": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
+    "test": "vitest run",
+    "test:rust": "cargo test --manifest-path src-tauri/Cargo.toml --lib"
   },
   "dependencies": {
     "@tauri-apps/api": "^2.12.5",
@@ -50,6 +52,7 @@
     "electron": "^28.3.3",
     "electron-builder": "^24.13.3",
     "vite": "^5.4.0",
+    "vitest": "^4.1.12",
     "wait-on": "^7.2.0"
   },
   "build": {

@@ -107,10 +107,11 @@ pub async fn show_all(app: AppHandle) {
 }
 
 #[tauri::command]
-pub async fn win_opacity(app: AppHandle, v: f64) {
-    if let Some(w) = main_win(&app) {
-        let _ = platform::set_opacity(&w, (v / 100.0).clamp(0.1, 1.0));
-    }
+pub async fn win_opacity(webview: Webview, v: f64) {
+    // Applies to the calling window — undocked panels get their own opacity
+    // (v1 always hit the main window, even from a panel's slider).
+    let win = webview.window();
+    let _ = platform::set_opacity(&win, (v / 100.0).clamp(0.1, 1.0));
 }
 
 #[tauri::command]
@@ -172,12 +173,24 @@ pub async fn panel_undock(app: AppHandle, id: String) {
         let _ = w.set_focus();
         return;
     }
-    let Some(main) = main_win(&app) else { return };
-    let origin = main
-        .url()
+    let Some(main) = main_win(&app) else {
+        log::warn!("panel-undock: no main window");
+        return;
+    };
+    let main_url = main.url();
+    let origin = main_url
+        .as_ref()
         .map(|u| u.origin().ascii_serialization())
         .unwrap_or_else(|_| "tauri://localhost".into());
-    let Ok(url) = format!("{origin}/index.html?panel={id}").parse() else { return };
+    let url_str = format!("{origin}/index.html?panel={id}");
+    let url = match url_str.parse() {
+        Ok(u) => u,
+        Err(e) => {
+            log::warn!("panel-undock: bad url {url_str}: {e}");
+            return;
+        }
+    };
+    log::info!("panel-undock: {label} → {url_str}");
 
     let prefs = load_prefs(&app);
     let (dw, dh) = PANEL_DEFAULTS
@@ -205,7 +218,7 @@ pub async fn panel_undock(app: AppHandle, id: String) {
             return;
         }
     };
-    platform::decorate(&win);
+    platform::decorate(&win.as_ref().window());
 
     let h2 = app.clone();
     let id2 = id.clone();
@@ -261,7 +274,7 @@ pub fn open_screenshot(app: &AppHandle) {
     }
     match builder.build()
     {
-        Ok(win) => platform::decorate_overlay(&win),
+        Ok(win) => platform::decorate_overlay(&win.as_ref().window()),
         Err(e) => eprintln!("screenshot window error: {e}"),
     }
 }
@@ -332,9 +345,14 @@ pub async fn capture_webview_rect(app: AppHandle, label: String, rect: Rect) -> 
     let monitor = xcap::Monitor::from_point(x, y).ok()?;
     let mx = monitor.x().ok()?;
     let my = monitor.y().ok()?;
-    let img = monitor
-        .capture_region((x - mx).max(0) as u32, (y - my).max(0) as u32, w, h)
-        .ok()?;
+    let mw = monitor.width().ok()?;
+    let mh = monitor.height().ok()?;
+    // clamp to the monitor so partially off-screen webviews still capture
+    let cx = (x - mx).clamp(0, mw as i32 - 1) as u32;
+    let cy = (y - my).clamp(0, mh as i32 - 1) as u32;
+    let cw = w.min(mw - cx);
+    let ch = h.min(mh - cy);
+    let img = monitor.capture_region(cx, cy, cw, ch).ok()?;
     rgba_to_data_url(img.width(), img.height(), img.into_raw())
 }
 
@@ -347,7 +365,7 @@ fn host_of(raw: &str) -> String {
         .unwrap_or_default()
 }
 
-fn allowed_hosts(prefs: &Map<String, Value>) -> Vec<String> {
+pub(crate) fn allowed_hosts(prefs: &Map<String, Value>) -> Vec<String> {
     prefs
         .get("adblockAllowedHosts")
         .and_then(|v| v.as_array())
@@ -378,8 +396,9 @@ pub async fn adblock_toggle_site(app: AppHandle, url: String) -> Value {
     };
     list.sort();
     let mut patch = Map::new();
-    patch.insert("adblockAllowedHosts".into(), json!(list));
+    patch.insert("adblockAllowedHosts".into(), json!(list.clone()));
     save_prefs(&app, patch);
+    crate::adblock::refresh(&app, list);
     json!({ "host": host, "disabled": disabled })
 }
 
@@ -437,6 +456,13 @@ pub async fn web_create(
             );
             NewWindowResponse::Deny
         });
+
+    // macOS: attach the compiled network-level content blocker before first load
+    #[cfg(target_os = "macos")]
+    let builder = match crate::adblock::make_configuration(&app) {
+        Some(config) => builder.with_webview_configuration(config),
+        None => builder,
+    };
 
     win.add_child(
         builder,

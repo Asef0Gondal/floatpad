@@ -1,9 +1,10 @@
 // Dual-backend IPC shim: Electron (v1 shell) or Tauri (v2 Rust shell).
 // Channel names stay identical to v1 so the mode components don't change.
-import { invoke } from '@tauri-apps/api/core';
+import { invoke, Channel } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
+import { tempDir } from '@tauri-apps/api/path';
 import { open, save } from '@tauri-apps/plugin-dialog';
-import { readFile, readTextFile, writeFile, writeTextFile } from '@tauri-apps/plugin-fs';
+import { readFile, readTextFile, writeFile, writeTextFile, BaseDirectory } from '@tauri-apps/plugin-fs';
 
 export const isTauri = typeof window !== 'undefined' && !!window.__TAURI_INTERNALS__;
 const electron = isTauri ? null : window.require('electron');
@@ -26,9 +27,45 @@ const SEND = {
   'screenshot-request': ['screenshot_request', () => ({})],
   'screenshot-cancel': ['screenshot_cancel', () => ({})],
   'screenshot-done': ['screenshot_done', (dataUrl) => ({ dataUrl })],
-  // shortcut: no OS drag-out under Tauri yet (Electron startDrag has no core API); add a drag plugin later
-  'board-drag-start': null,
 };
+
+// Drag an image out of the Board to Finder / Figma / etc. (v1: startDrag).
+// Writes the original bytes to a temp file, then starts a native OS drag with
+// a PNG preview icon via tauri-plugin-drag.
+const MIME_EXT = {
+  'image/png': 'png', 'image/jpeg': 'jpg', 'image/gif': 'gif',
+  'image/webp': 'webp', 'image/svg+xml': 'svg', 'image/bmp': 'bmp', 'image/tiff': 'tiff',
+};
+function pngIcon(dataUrl) {
+  if (dataUrl.startsWith('data:image/png;base64,')) return Promise.resolve(dataUrl);
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => {
+      const s = Math.min(1, 64 / Math.max(img.width, img.height));
+      const c = document.createElement('canvas');
+      c.width = Math.max(1, Math.round(img.width * s));
+      c.height = Math.max(1, Math.round(img.height * s));
+      c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+      resolve(c.toDataURL('image/png'));
+    };
+    img.onerror = reject;
+    img.src = dataUrl;
+  });
+}
+async function dragOut(dataUrl) {
+  const m = /^data:(image\/[\w+.-]+);base64,(.*)$/s.exec(dataUrl || '');
+  if (!m) return;
+  const [, mime, b64] = m;
+  const ext = MIME_EXT[mime] || 'png';
+  const name = `floatpad_drag_${Date.now()}.${ext}`;
+  await writeFile(name, b64ToBytes(b64), { baseDir: BaseDirectory.Temp });
+  const path = (await tempDir()) + name;
+  await invoke('plugin:drag|start_drag', {
+    item: [path],
+    image: await pngIcon(dataUrl),
+    onEvent: new Channel(),
+  });
+}
 
 // invoke() channels served in JS through the official Tauri plugins
 const JS_INVOKE = {
@@ -93,6 +130,10 @@ const listeners = new Map(); // handler → unlisten promise
 export const ipcRenderer = {
   send(channel, ...args) {
     if (!isTauri) return electron.ipcRenderer.send(channel, ...args);
+    if (channel === 'board-drag-start') {
+      dragOut(args[0]).catch((e) => console.error('board-drag-start', e));
+      return;
+    }
     const entry = SEND[channel];
     if (!entry) return;
     invoke(entry[0], entry[1](...args)).catch((e) => console.error(channel, e));

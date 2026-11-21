@@ -145,10 +145,10 @@ FloatPad is a Tauri 2 app: a native Rust core with the system webview rendering 
 
 ### Known differences from the Electron v1
 
-- **Drag image out to Finder/Figma** is not wired up yet (Electron's `startDrag` has no Tauri core equivalent).
-- **Ad blocking** hides ad/tracker elements and removes ad iframes instead of cancelling network requests (WKWebView exposes no request interceptor); the per-site allowlist works the same.
-- **Detach (click-through)** does not forward hover events to the window underneath.
+- **Ad blocking** is network-level on macOS (WKContentRuleList, same host list and per-site allowlist as v1) plus ad-element hiding everywhere; on Windows/Linux it is element-level only for now.
+- **Detach (click-through)** does not forward hover events to the window underneath; tray → Show or `⌘⇧Space` always restores control.
 - **Window opacity** is macOS/Windows only for now (no-op on Linux).
+- **Opacity sliders on undocked panels** now affect their own window (v1 always changed the main window).
 
 ## Project structure
 
@@ -208,6 +208,19 @@ npm run dist:linux    # .deb + AppImage
 ```
 
 Screen capture (⌘⇧S and frame grabbing) needs the OS **Screen Recording** permission on macOS; the system prompts on first use.
+
+## Tests
+
+```bash
+npm test           # vitest: helpers + the IPC contract (every channel used by any mode is handled by the shim)
+npm run test:rust  # cargo unit tests (ad-block rule generation)
+```
+
+There is also a hidden end-to-end self-test of the Rust plumbing (no window shown):
+with vite running, `FP_SELFTEST=1 cargo run` from `src-tauri/` — it checks window
+controls, panels, the embedded browser round-trip, capture and the ad blocker,
+logging `SELFTEST PASS/FAIL` per assertion. See [docs/ENGINEERING-NOTES.md](docs/ENGINEERING-NOTES.md)
+for the debugging playbook and the root causes behind the shell's design rules.
 
 ## Data & privacy
 
