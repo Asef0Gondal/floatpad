@@ -203,7 +203,7 @@ function AppMain() {
     setChromeVisible(true);
   }, []);
 
-  const hideChromeSoon = useCallback((delay = 720) => {
+  const hideChromeSoon = useCallback((delay = 1600) => {
     if (chromeHideTimerRef.current) clearTimeout(chromeHideTimerRef.current);
     chromeHideTimerRef.current = window.setTimeout(() => {
       setChromeVisible(false);
@@ -217,7 +217,7 @@ function AppMain() {
       revealChrome();
       return undefined;
     }
-    hideChromeSoon(180);
+    hideChromeSoon(700);
     return () => { if (chromeHideTimerRef.current) clearTimeout(chromeHideTimerRef.current); };
   }, [borderless, miniMode, showSizes, showMore, showKeys, showOnboarding, revealChrome, hideChromeSoon]);
 
@@ -315,7 +315,7 @@ function AppMain() {
   return (
     <div
       className={`app${potato?' potato':''}${miniMode?' mini':''}${borderless?' borderless':''}${chromeVisible?' chrome-visible':''}`}
-      onMouseLeave={() => { if (borderless) hideChromeSoon(120); }}
+      onMouseLeave={() => { if (borderless) hideChromeSoon(900); }}
     >
       {/* Always-visible grab handle (drag to move), even in borderless view */}
       <div className="grab-handle-wrap" title="Drag to move window">
@@ -325,14 +325,14 @@ function AppMain() {
       </div>
 
       {borderless && (
-        <div className="chrome-hotspot" onMouseEnter={revealChrome} onMouseLeave={() => hideChromeSoon(680)}/>
+        <div className="chrome-hotspot" onMouseEnter={revealChrome} onMouseLeave={() => hideChromeSoon(1600)}/>
       )}
 
       <header
         className="titlebar"
         data-tauri-drag-region
         onMouseEnter={revealChrome}
-        onMouseLeave={() => { if (borderless) hideChromeSoon(680); }}
+        onMouseLeave={() => { if (borderless) hideChromeSoon(1600); }}
       >
 
         {/* Mode tabs */}
