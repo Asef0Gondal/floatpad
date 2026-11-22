@@ -1292,3 +1292,26 @@ kbd {
   opacity: 1; pointer-events: auto; transform: translateY(0);
   box-shadow: 0 16px 36px rgba(0,0,0,.18);
 }
+
+/* ── Scrollable mode toolbars (Board/Write) with explicit scroll buttons ── */
+.toolbar-scroll { position: relative; flex-shrink: 0; }
+.toolbar-scroll-inner { width: 100%; }
+.toolbar-scroll-btn {
+  position: absolute; top: 0; bottom: 0; width: 24px; z-index: 6;
+  display: flex; align-items: center; justify-content: center;
+  background: var(--fp-bg-surface); border: none;
+  color: var(--fp-text-dim); cursor: pointer; font-size: 18px; line-height: 1;
+}
+.toolbar-scroll-btn:hover { color: var(--fp-text); background: var(--fp-bg-hover); }
+.toolbar-scroll-btn.ts-left  { left: 0;  border-right: 1px solid var(--fp-border); box-shadow: 6px 0 10px rgba(0,0,0,.25); }
+.toolbar-scroll-btn.ts-right { right: 0; border-left:  1px solid var(--fp-border); box-shadow: -6px 0 10px rgba(0,0,0,.25); }
+
+/* Responsive: shrink tool buttons as the window narrows so more fits */
+@media (max-width: 760px) {
+  .mode-toolbar .tb-tool { padding: 0 6px; font-size: 10.5px; }
+  .mode-toolbar { gap: 2px; padding: 0 6px; }
+}
+@media (max-width: 560px) {
+  .mode-toolbar .tb-tool { padding: 0 4px; font-size: 10px; gap: 3px; }
+  .write-mode-btn { padding: 0 6px; font-size: 10px; }
+}

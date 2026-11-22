@@ -13,6 +13,7 @@ import {
 import { applyTheme, getInitialTheme, THEME_KEY } from './theme';
 import { potatoTransition } from './utils/helpers';
 import { ipcRenderer } from './ipc';
+import { getCurrentWindow } from '@tauri-apps/api/window';
 
 const MODES = [
   { id:'board', label:'Board', Icon:IconImage  },
@@ -127,6 +128,16 @@ function AppMain() {
     ipcRenderer.send('win-opacity', next);
     setOpacity(next);
   }, [potato]);
+
+  // Toolbar/titlebar buttons must not steal focus from <body>, otherwise the
+  // mode keyboard shortcuts (which guard on activeElement === body) stop working
+  // after any tool click. Preventing mousedown default blocks focus but still
+  // fires click; keyboard Tab focus is unaffected.
+  useEffect(() => {
+    const h = e => { if (e.target instanceof Element && e.target.closest('button')) e.preventDefault(); };
+    document.addEventListener('mousedown', h);
+    return () => document.removeEventListener('mousedown', h);
+  }, []);
 
   // Close menus on outside click
   useEffect(() => {
@@ -286,7 +297,7 @@ function AppMain() {
           </button>
           <input type="range" className="tb-opacity" min="15" max="100"
             value={opacity} onChange={handleOpacity} title={`Opacity ${opacity}%`}/>
-          <button className="tb-close" onClick={()=>ipcRenderer.send('win-close')}>
+          <button className="tb-close" onClick={()=>getCurrentWindow().close()} title="Close this panel">
             <IconClose size={9}/>
           </button>
         </div>

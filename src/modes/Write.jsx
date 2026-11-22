@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react'
 import { marked } from 'marked';
 import DOMPurify from 'dompurify';
 import { IconSave, IconFolder, IconWrite } from '../components/Icons';
+import ScrollToolbar from '../components/ScrollToolbar';
 
 import { ipcRenderer } from '../ipc';
 import { toggleTaskAtIndex } from '../utils/helpers';
@@ -184,7 +185,7 @@ export default function Write({ active }) {
     <div className="write-wrap">
 
       {/* Toolbar */}
-      <div className="write-toolbar mode-toolbar">
+      <ScrollToolbar className="write-toolbar">
         {/* Mode switch */}
         <div className="write-mode-pill">
           <button
@@ -248,7 +249,7 @@ export default function Write({ active }) {
         <span className="tb-tool-info">
           {wordCount.toLocaleString()} words · {writeMode==='script' ? `${pages} pages · ${sceneCount} scenes` : `${content.length.toLocaleString()} chars`}
         </span>
-      </div>
+      </ScrollToolbar>
 
       {/* Editor / live preview */}
       <div className="write-body">

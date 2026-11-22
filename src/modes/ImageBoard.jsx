@@ -19,6 +19,7 @@ import {
 
 import { ipcRenderer } from '../ipc';
 import { evalInWebview } from '../utils/tauriWebview';
+import ScrollToolbar from '../components/ScrollToolbar';
 
 const EXPORT_PADDING = 48;
 const LABEL_WIDTH = 180;
@@ -384,6 +385,13 @@ export default function ImageBoard({ active }) {
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
+  const arrangeBtnRef = useRef(null);
+  // Fixed positioning so the dropdown escapes the scrollable toolbar's clipping.
+  const arrangeMenuPos = () => {
+    const r = arrangeBtnRef.current?.getBoundingClientRect();
+    if (!r) return { position: 'fixed', top: 0, left: 0 };
+    return { position: 'fixed', top: r.bottom + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)) };
+  };
 
   useEffect(() => { imagesRef.current = images; }, [images]);
   useEffect(() => { notesRef.current = notes; }, [notes]);
@@ -1630,7 +1638,7 @@ export default function ImageBoard({ active }) {
 
   return (
     <div className="board-wrap">
-      <div className="board-toolbar mode-toolbar">
+      <ScrollToolbar className="board-toolbar">
         <button className="tb-tool" onClick={openDialog} title="Import images from Finder">
           <IconFolder size={13}/>
           Import
@@ -1775,11 +1783,11 @@ export default function ImageBoard({ active }) {
 
         {images.length > 0 && (
           <div className="tb-menu-wrap" ref={arrangeRef}>
-            <button className="tb-tool" onClick={() => setShowArrange(s => !s)} title="Arrange, align and normalize images">
+            <button ref={arrangeBtnRef} className="tb-tool" onClick={() => setShowArrange(s => !s)} title="Arrange, align and normalize images">
               Arrange ▾
             </button>
             {showArrange && (
-              <div className="tb-menu board-arrange-menu">
+              <div className="tb-menu board-arrange-menu" style={arrangeMenuPos()}>
                 <button className="tb-menu-item" onClick={() => packToView()}><span className="tb-menu-label">Pack optimal</span><span className="tb-menu-sub">fit view</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'left')}><span className="tb-menu-label">Align left</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'right')}><span className="tb-menu-label">Align right</span></button>
@@ -1839,7 +1847,7 @@ export default function ImageBoard({ active }) {
         <span className="tb-tool-info">
           {scrapeBusy ? 'scraping URL… · ' : ''}{zoom}% · {images.length} img · {notes.length} note{notes.length === 1 ? '' : 's'} · {visibleAnnotationCount} mark{visibleAnnotationCount === 1 ? '' : 's'}
         </span>
-      </div>
+      </ScrollToolbar>
 
       <div
         ref={boardRef}
