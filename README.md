@@ -5,11 +5,13 @@
 <h1 align="center">FloatPad</h1>
 
 <p align="center">
-  A lean, always-on-top reference pad for macOS.<br/>
-  Image board, video player, real web browser and writing pad — in one floating overlay.
+  A floating <strong>reference board &amp; moodboard</strong> that stays always-on-top.<br/>
+  The open-source <strong>PureRef / ScreenFloat alternative</strong> for macOS, Windows &amp; Linux —<br/>
+  images, video, a real web browser and a writing pad in one floating overlay.
 </p>
 
 <p align="center">
+  <a href="https://github.com/Asef0Gondal/floatpad/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Asef0Gondal/floatpad?label=download&logo=github&color=4a90e2"></a>
   <a href="https://github.com/Asef0Gondal/floatpad"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-Asef0Gondal%2Ffloatpad-181717?logo=github&logoColor=white"></a>
   <img alt="Rust" src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black">
   <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black">
@@ -26,13 +28,37 @@
 >
 > **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app) — a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The legacy Electron shell was retired in v2.1.2 — Tauri is the only shell.
 
+<p align="center">
+  <a href="https://github.com/Asef0Gondal/floatpad/releases/latest"><strong>⬇ Download FloatPad</strong></a> · macOS (.dmg) · Windows (.exe) · Linux (.deb / AppImage)
+</p>
+
+**FloatPad** is a free, open-source **reference image board** and **moodboard** app — a lightweight **PureRef alternative** and **ScreenFloat alternative** built with **Rust** and **Tauri**. Keep reference images, screenshots, GIFs, video, web pages and markdown notes **always on top** of your work, with **OCR**, region **screenshots**, and a click-through floating overlay. It runs on **macOS, Windows and Linux** from one codebase, weighs ~10 MB, and collects no telemetry.
+
 ## Why FloatPad
 
 Reference material is scattered across Finder, YouTube, browser tabs and design files. Every lookup costs an alt-tab, a window resize, and a lost train of thought.
 
 FloatPad keeps the reference **on top of everything else**: a frameless overlay that stays above your work, can drop to **15% opacity**, and can become **click-through** so it never blocks the app underneath. It lives in the menu bar instead of the Dock and is summoned with a global shortcut.
 
-Built for video editors, designers and developers who need a second screen that never takes focus away from the main one.
+Built for creative directors, designers, video editors and developers who need a second screen that never takes focus away from the main one.
+
+## How FloatPad compares
+
+Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef alternative**? FloatPad is the all-in-one option: instead of a single-purpose image viewer, it combines a reference board with a video player, a real web browser and a writing pad — plus OCR and region screenshots — in one native, open-source app.
+
+| | FloatPad | PureRef | ScreenFloat | BeeRef |
+| --- | --- | --- | --- | --- |
+| Open source (MIT) | ✅ | ❌ | ❌ | ✅ |
+| macOS / Windows / Linux | ✅ | ✅ | macOS only | ✅ |
+| Reference image board | ✅ | ✅ | ✅ | ✅ |
+| OCR (image → text) | ✅ | ❌ | ✅ | ❌ |
+| Region screenshots | ✅ | ❌ | ✅ | ❌ |
+| Video player + A-B loop | ✅ | ❌ | ❌ | ❌ |
+| Built-in web browser + ad block | ✅ | ❌ | ❌ | ❌ |
+| Markdown / screenplay notes | ✅ | ❌ | ❌ | ❌ |
+| Native Rust core (~10 MB) | ✅ | ❌ | ❌ | ❌ |
+
+*Competitor features reflect their public docs at the time of writing; corrections welcome.*
 
 ## Modes
 
