@@ -95,6 +95,7 @@ const JS_INVOKE = {
     return p ? { path: p } : null;
   },
   'dialog-write-open': async () => (await open({ title: 'Open document', filters: [{ name: 'Text files', extensions: ['txt', 'md', 'fountain'] }] })) || null,
+  'dialog-open-folder': async () => (await open({ title: 'Open a folder of notes', directory: true })) || null,
   'file-read': async (p) => { try { return bytesToB64(await readFile(p)); } catch { return null; } },
   'file-read-text': async (p) => { try { return await readTextFile(p); } catch { return null; } },
   'file-write': async (p, data) => { try { await writeTextFile(p, data); return true; } catch { return false; } },
@@ -117,6 +118,7 @@ const RUST_INVOKE = {
   'web-destroy': ['web_destroy', (label) => ({ label })],
   'gif-frames': ['gif_frames', (dataUrl) => ({ dataUrl })],
   'image-optimize': ['image_optimize', (dataUrl, maxDim) => ({ dataUrl, maxDim })],
+  'list-md-files': ['list_md_files', (dir) => ({ dir })],
   'board-autosave-write': ['autosave_board', (json) => ({ json })],
   'board-autosave-read': ['load_autosave_board', () => ({})],
   'reveal-path': ['reveal_path', (path) => ({ path })],

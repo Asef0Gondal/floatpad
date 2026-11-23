@@ -237,6 +237,22 @@ pub async fn run(app: AppHandle) {
         }
     }
 
+    // 14. list_md_files round-trip (temp dir, self-cleaning)
+    {
+        let dir = std::env::temp_dir().join(format!("fp-md-test-{}", std::process::id()));
+        let _ = std::fs::create_dir_all(&dir);
+        let _ = std::fs::write(dir.join("alpha.md"), "# hi");
+        let _ = std::fs::write(dir.join("skip.png"), "x");
+        match commands::list_md_files(dir.to_string_lossy().to_string()).await {
+            Ok(v) => {
+                let names: Vec<&str> = v.as_array().map(|a| a.iter().filter_map(|f| f["name"].as_str()).collect()).unwrap_or_default();
+                check!(names.contains(&"alpha.md") && !names.contains(&"skip.png"), "list_md_files filters .md only");
+            }
+            Err(e) => log::error!("SELFTEST FAIL: list_md_files: {e}"),
+        }
+        let _ = std::fs::remove_dir_all(&dir);
+    }
+
     log::info!("SELFTEST: done");
     app.exit(0);
 }

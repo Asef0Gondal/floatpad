@@ -648,6 +648,29 @@ pub async fn ocr_image(data_url: String) -> Result<Value, String> {
     Ok(json!({ "text": text }))
 }
 
+/// List .md/.markdown/.txt files in a directory (Write folder workflow).
+#[tauri::command]
+pub async fn list_md_files(dir: String) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let mut out = Vec::new();
+        for e in std::fs::read_dir(&dir).map_err(|e| e.to_string())?.flatten() {
+            let p = e.path();
+            if !p.is_file() { continue; }
+            let ext = p.extension().and_then(|x| x.to_str()).unwrap_or("").to_lowercase();
+            if matches!(ext.as_str(), "md" | "markdown" | "txt") {
+                out.push(json!({
+                    "name": p.file_name().and_then(|n| n.to_str()).unwrap_or("").to_string(),
+                    "path": p.to_string_lossy().to_string(),
+                }));
+            }
+        }
+        out.sort_by(|a, b| a["name"].as_str().unwrap_or("").cmp(b["name"].as_str().unwrap_or("")));
+        Ok(Value::Array(out))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Downscale an image to fit max_dim (PureRef "manage images" / board perf).
 /// Preserves aspect + format; never upscales. Returns new data URL + size info.
 #[tauri::command]

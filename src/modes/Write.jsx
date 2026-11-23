@@ -48,6 +48,10 @@ export default function Write({ active }) {
   const [timerRunning, setTimerRunning] = useState(false);
   const [timerLabel,   setTimerLabel]   = useState('25:00');
   const [preview,      setPreview]      = useState(() => localStorage.getItem('fp_write_preview') === '1');
+  const [folder,       setFolder]       = useState(null);
+  const [files,        setFiles]        = useState([]);
+  const [currentFile,  setCurrentFile]  = useState(null);
+  const [showFiles,    setShowFiles]    = useState(false);
   const previewRef = useRef(null);
 
   useEffect(() => { localStorage.setItem('fp_write_preview', preview ? '1' : '0'); }, [preview]);
@@ -74,8 +78,11 @@ export default function Write({ active }) {
 
   // ── Autosave ──────────────────────────────────────────────
   useEffect(() => {
-    const save = () => { try { localStorage.setItem(AUTOSAVE_KEY, content); } catch {} };
-    const t = setTimeout(save, 500);
+    const save = () => {
+      if (currentFile) ipcRenderer.invoke('file-write', currentFile, content).catch(() => {});
+      else { try { localStorage.setItem(AUTOSAVE_KEY, content); } catch {} }
+    };
+    const t = setTimeout(save, 600);
     const onVis = () => { if (document.visibilityState === 'hidden') save(); };
     window.addEventListener('blur', save);
     document.addEventListener('visibilitychange', onVis);
@@ -84,7 +91,7 @@ export default function Write({ active }) {
       window.removeEventListener('blur', save);
       document.removeEventListener('visibilitychange', onVis);
     };
-  }, [content]);
+  }, [content, currentFile]);
 
   // ── Mode persist ──────────────────────────────────────────
   useEffect(() => {
@@ -135,17 +142,48 @@ export default function Write({ active }) {
 
   // ── Export ────────────────────────────────────────────────
   const saveFile = useCallback(async () => {
+    if (currentFile) { await ipcRenderer.invoke('file-write', currentFile, content); return; }
     const r = await ipcRenderer.invoke('dialog-write-save');
     if (!r) return;
     await ipcRenderer.invoke('file-write', r.path, content);
-  }, [content]);
+    setCurrentFile(r.path);
+  }, [content, currentFile]);
 
   const loadFile = useCallback(async () => {
     const filePath = await ipcRenderer.invoke('dialog-write-open');
     if (!filePath) return;
     const text = await ipcRenderer.invoke('file-read-text', filePath);
-    if (text) setContent(text);
+    if (text !== null) { setContent(text); setCurrentFile(filePath); setWriteMode('md'); }
   }, []);
+
+  // ── .md folder workflow (Markraft parity) ──
+  const refreshFiles = useCallback(async dir => {
+    const list = await ipcRenderer.invoke('list-md-files', dir);
+    setFiles(Array.isArray(list) ? list : []);
+  }, []);
+  const pickFolder = useCallback(async () => {
+    const dir = await ipcRenderer.invoke('dialog-open-folder');
+    if (!dir) return;
+    setFolder(dir);
+    await refreshFiles(dir);
+    setShowFiles(true);
+  }, [refreshFiles]);
+  const openMdFile = useCallback(async path => {
+    const text = await ipcRenderer.invoke('file-read-text', path);
+    setContent(text ?? '');
+    setCurrentFile(path);
+    setWriteMode('md');
+    setShowFiles(false);
+  }, []);
+  const newMdFile = useCallback(async () => {
+    if (!folder) return;
+    const path = `${folder}/note-${Date.now()}.md`;
+    await ipcRenderer.invoke('file-write', path, '');
+    await refreshFiles(folder);
+    setContent('');
+    setCurrentFile(path);
+    setWriteMode('md');
+  }, [folder, refreshFiles]);
 
   // ── Focus timer ───────────────────────────────────────────
   const toggleTimer = useCallback(() => {
@@ -245,11 +283,29 @@ export default function Write({ active }) {
           Open
         </button>
 
+        <button className="tb-tool" onClick={pickFolder} title="Open a folder of .md notes">📁 Folder</button>
+        {folder && (
+          <button className={`tb-tool${showFiles?' active':''}`} onClick={()=>setShowFiles(s=>!s)} title="Browse folder files">
+            {currentFile ? currentFile.split('/').pop() : 'Files'} ▾
+          </button>
+        )}
+
         <div className="tb-tool-spacer"/>
         <span className="tb-tool-info">
           {wordCount.toLocaleString()} words · {writeMode==='script' ? `${pages} pages · ${sceneCount} scenes` : `${content.length.toLocaleString()} chars`}
         </span>
       </ScrollToolbar>
+
+      {folder && showFiles && (
+        <div className="write-files-bar">
+          <button className="wfb-new" onClick={newMdFile}>+ New</button>
+          {files.map(f => (
+            <button key={f.path} className={`wfb-file${currentFile===f.path?' active':''}`} onClick={()=>openMdFile(f.path)} title={f.path}>{f.name}</button>
+          ))}
+          {files.length === 0 && <span className="wfb-empty">No .md files yet — create one</span>}
+          <button className="wfb-change" onClick={pickFolder}>Change folder…</button>
+        </div>
+      )}
 
       {/* Editor / live preview */}
       <div className="write-body">

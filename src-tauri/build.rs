@@ -34,6 +34,7 @@ fn main() {
                 "shot_payload",
                 "gif_frames",
                 "image_optimize",
+                "list_md_files",
                 "shot_save",
                 "shots_list",
                 "shot_load",

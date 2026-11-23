@@ -287,6 +287,21 @@ large-board performance/memory (huge screenshots/photos shrunk on demand).
 - JPEG re-encode requires RGB (no alpha); branch on source mime so PNG keeps
   alpha and JPEG stays JPEG. `thumbnail` only shrinks, never enlarges.
 
+## v2.7.0 — Loop: Write .md-folder workflow (Markraft parity)
+
+**Changed:** Write mode can open a folder of `.md`/`.markdown`/`.txt` notes
+(Rust `list_md_files`), browse them in a file bar, create new files, and edit +
+autosave straight to disk. Additive: with no folder/file open it behaves exactly
+as the old localStorage scratchpad. Save writes in place when a file is open.
+
+**Learned:**
+- Keep new workflows ADDITIVE — `currentFile === null` preserves the scratchpad
+  path, so the feature can't regress existing behavior.
+- The file bar is a sibling of the scroll toolbar (not a dropdown inside it) so
+  it isn't clipped by the toolbar's overflow — same lesson as the Arrange menu.
+- New-file naming uses a timestamp (WKWebView has no working `window.prompt`),
+  avoiding a dead native dialog.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
