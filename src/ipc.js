@@ -116,6 +116,7 @@ const RUST_INVOKE = {
   'web-create': ['web_create', (label, url) => ({ window: getCurrentWindow().label, label, url, x: 0, y: 0, w: 1, h: 1 })],
   'web-destroy': ['web_destroy', (label) => ({ label })],
   'gif-frames': ['gif_frames', (dataUrl) => ({ dataUrl })],
+  'image-optimize': ['image_optimize', (dataUrl, maxDim) => ({ dataUrl, maxDim })],
   'board-autosave-write': ['autosave_board', (json) => ({ json })],
   'board-autosave-read': ['load_autosave_board', () => ({})],
   'reveal-path': ['reveal_path', (path) => ({ path })],

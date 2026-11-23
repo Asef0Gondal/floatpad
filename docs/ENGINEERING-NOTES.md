@@ -272,6 +272,21 @@ only what was genuinely broken:
 - The audit's "OCR implemented as ⌥T" was WRONG (⌥T is pixel-art); OCR was
   button-only. Resolved by adding a genuine `T` shortcut.
 
+## v2.6.0 — Loop: image optimize / downscale (PureRef "manage images")
+
+**Changed:** `image_optimize` Rust command (image crate `thumbnail`, preserves
+aspect + format, never upscales, off-thread). Per-image ⚡ button + selection
+"⚡ Optimize" downscale to 1600px, undoable, with a "saved N KB" readout. Helps
+large-board performance/memory (huge screenshots/photos shrunk on demand).
+
+**Learned:**
+- The DEV self-test binary loads the vite dev URL, so it MUST run with vite up;
+  without vite the window never loads and the self-test produces an empty log
+  (looked like 0 passes). The RELEASE self-test uses bundled assets and needs no
+  vite. Always run the dev self-test with `npm run dev:vite` running.
+- JPEG re-encode requires RGB (no alpha); branch on source mime so PNG keeps
+  alpha and JPEG stays JPEG. `thumbnail` only shrinks, never enlarges.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

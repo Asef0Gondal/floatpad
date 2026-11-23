@@ -33,6 +33,7 @@ fn main() {
                 "shot_open",
                 "shot_payload",
                 "gif_frames",
+                "image_optimize",
                 "shot_save",
                 "shots_list",
                 "shot_load",

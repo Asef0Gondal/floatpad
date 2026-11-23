@@ -648,6 +648,37 @@ pub async fn ocr_image(data_url: String) -> Result<Value, String> {
     Ok(json!({ "text": text }))
 }
 
+/// Downscale an image to fit max_dim (PureRef "manage images" / board perf).
+/// Preserves aspect + format; never upscales. Returns new data URL + size info.
+#[tauri::command]
+pub async fn image_optimize(data_url: String, max_dim: u32) -> Result<Value, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use base64::Engine;
+        let (mime, b64) = match data_url.split_once("base64,") {
+            Some((h, b)) => (h.trim_start_matches("data:").trim_end_matches(';').to_string(), b.to_string()),
+            None => ("image/png".to_string(), data_url.clone()),
+        };
+        let bytes = base64::engine::general_purpose::STANDARD.decode(&b64).map_err(|e| e.to_string())?;
+        let before = bytes.len();
+        let img = image::load_from_memory(&bytes).map_err(|e| e.to_string())?;
+        let max_dim = max_dim.max(64);
+        let out = if img.width().max(img.height()) > max_dim { img.thumbnail(max_dim, max_dim) } else { img };
+        let (nw, nh) = (out.width(), out.height());
+        let mut buf = std::io::Cursor::new(Vec::new());
+        let (out_mime, after) = if mime == "image/jpeg" {
+            out.write_to(&mut buf, image::ImageFormat::Jpeg).map_err(|e| e.to_string())?;
+            ("image/jpeg", buf.into_inner())
+        } else {
+            out.write_to(&mut buf, image::ImageFormat::Png).map_err(|e| e.to_string())?;
+            ("image/png", buf.into_inner())
+        };
+        let url = format!("data:{out_mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(&after));
+        Ok(json!({ "dataUrl": url, "width": nw, "height": nh, "beforeBytes": before, "afterBytes": after.len() }))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
 /// Decode a GIF into fully-composited PNG frames + delays (PureRef GIF playback).
 /// Capped at 300 frames to keep memory sane on huge GIFs.
 #[tauri::command]

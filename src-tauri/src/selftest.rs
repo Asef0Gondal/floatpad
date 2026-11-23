@@ -215,6 +215,28 @@ pub async fn run(app: AppHandle) {
         }
     }
 
+    // 13. image_optimize: downscale preserving aspect, never upscale
+    {
+        use base64::Engine;
+        let encode = |img: image::RgbaImage| {
+            let mut buf = std::io::Cursor::new(Vec::new());
+            img.write_to(&mut buf, image::ImageFormat::Png).unwrap();
+            format!("data:image/png;base64,{}", base64::engine::general_purpose::STANDARD.encode(buf.into_inner()))
+        };
+        let big = encode(image::RgbaImage::from_pixel(2000, 1000, image::Rgba([10, 20, 30, 255])));
+        match commands::image_optimize(big, 1600).await {
+            Ok(v) => {
+                let (w, h) = (v["width"].as_u64().unwrap_or(0), v["height"].as_u64().unwrap_or(0));
+                check!(w == 1600 && h == 800, "image_optimize downscales 2000x1000 -> {w}x{h}");
+            }
+            Err(e) => log::error!("SELFTEST FAIL: image_optimize downscale: {e}"),
+        }
+        let small = encode(image::RgbaImage::from_pixel(100, 80, image::Rgba([1, 2, 3, 255])));
+        if let Ok(v) = commands::image_optimize(small, 1600).await {
+            check!(v["width"].as_u64() == Some(100), "image_optimize never upscales");
+        }
+    }
+
     log::info!("SELFTEST: done");
     app.exit(0);
 }

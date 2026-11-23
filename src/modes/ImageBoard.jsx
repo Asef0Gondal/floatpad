@@ -1234,6 +1234,28 @@ export default function ImageBoard({ active }) {
     }
   }, []);
 
+  // ── Optimize / downscale (PureRef "manage images", large-board perf) ──
+  const [optMsg, setOptMsg] = useState('');
+  const optimizeImages = useCallback(async ids => {
+    const targets = imagesRef.current.filter(i => ids.has(i.id));
+    if (!targets.length) return;
+    const results = [];
+    for (const i of targets) {
+      try { results.push({ id: i.id, r: await ipcRenderer.invoke('image-optimize', i.src, 1600) }); } catch { /* skip */ }
+    }
+    const saved = results.reduce((a, x) => a + Math.max(0, (x.r?.beforeBytes || 0) - (x.r?.afterBytes || 0)), 0);
+    setImages(prev => prev.map(i => {
+      const hit = results.find(x => x.id === i.id);
+      if (!hit?.r?.dataUrl) return i;
+      const nw = hit.r.width, nh = hit.r.height;
+      return { ...i, src: hit.r.dataUrl, origW: nw, origH: nh, h: Math.max(8, Math.round(i.w * (nh / nw))) };
+    }));
+    if (saved > 1024) {
+      setOptMsg(`optimized · saved ${(saved / 1024).toFixed(0)} KB`);
+      setTimeout(() => setOptMsg(''), 3000);
+    }
+  }, []);
+
   // ── Focus mode + slideshow (PureRef's most-used flow) ─────
   const enterFocus = useCallback(id => {
     const img = imagesRef.current.find(i => i.id === id);
@@ -1839,6 +1861,7 @@ export default function ImageBoard({ active }) {
                 <button className="tb-tool" onClick={() => enterFocus(singleSelectedImage.id)} title="Focus this image  F · ←/→ to step · Esc to exit">
                   ⤢ Focus
                 </button>
+                <button className="tb-tool" onClick={() => optimizeImages(selected)} title="Downscale selected images to 1600px (undoable)">⚡ Optimize</button>
                 <button className="tb-tool" onClick={() => runOcr(singleSelectedImage)} title="Extract text (OCR)">
                   T OCR
                 </button>
@@ -1950,7 +1973,7 @@ export default function ImageBoard({ active }) {
 
         <div className="tb-tool-spacer"/>
         <span className="tb-tool-info">
-          {scrapeBusy ? 'scraping URL… · ' : ''}{zoom}% · {images.length} img · {notes.length} note{notes.length === 1 ? '' : 's'} · {visibleAnnotationCount} mark{visibleAnnotationCount === 1 ? '' : 's'}
+          {optMsg ? optMsg + ' · ' : ''}{scrapeBusy ? 'scraping URL… · ' : ''}{zoom}% · {images.length} img · {notes.length} note{notes.length === 1 ? '' : 's'} · {visibleAnnotationCount} mark{visibleAnnotationCount === 1 ? '' : 's'}
         </span>
       </ScrollToolbar>
 
@@ -2099,6 +2122,13 @@ export default function ImageBoard({ active }) {
                       title="Extract text (OCR) + detect links, emails, phones"
                     >
                       T
+                    </button>
+                    <button
+                      className="bia-btn"
+                      onClick={e => { e.stopPropagation(); optimizeImages(new Set([img.id])); }}
+                      title="Optimize / downscale to 1600px (undoable)"
+                    >
+                      ⚡
                     </button>
                     <button
                       className="bia-btn"

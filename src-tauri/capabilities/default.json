@@ -74,6 +74,7 @@
     "allow-shot-delete",
     "allow-shot-update",
     "allow-shots-clear",
-    "allow-board-autosave-clear"
+    "allow-board-autosave-clear",
+    "allow-image-optimize"
   ]
 }

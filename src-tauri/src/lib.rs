@@ -271,6 +271,7 @@ pub fn run() {
             commands::shot_open,
             commands::shot_payload,
             commands::gif_frames,
+            commands::image_optimize,
             shots::shot_save,
             shots::shots_list,
             shots::shot_load,
