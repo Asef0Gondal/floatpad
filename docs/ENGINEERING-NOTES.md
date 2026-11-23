@@ -302,6 +302,29 @@ as the old localStorage scratchpad. Save writes in place when a file is open.
 - New-file naming uses a timestamp (WKWebView has no working `window.prompt`),
   avoiding a dead native dialog.
 
+"## v2.8.0 — Loop: undocked-board shared state (single-writer sync)
+
+**Changed:** the undocked Board panel no longer opens empty or loses edits.
+- Both windows restore the autosaved board on open.
+- A `BroadcastChannel('floatpad-board-sync')` syncs edits between main + panel.
+- **Single disk writer:** only the main window writes the autosave file; the
+  panel's edits broadcast to main, which applies + persists them. No two writers.
+- A `hello`/`state` handshake gives a newly opened panel the main window's LIVE
+  state (fresher than disk).
+
+**Learned / safety guards (this is the data-race-prone one):**
+- `boardReady` must start FALSE for every window. If the panel started "ready"
+  it would broadcast its EMPTY pre-restore state and WIPE the main board. Starting
+  false means the first broadcast only happens after restore (which is silent).
+- A `silentApply` ref marks restore/remote applies so they aren't re-broadcast
+  (echo-loop prevention). The broadcast effect consumes/resets it.
+- Source-tagged messages (`main`/`panel`) ignore self-echoes.
+
+**Honest limitation:** multi-window live sync is implemented conservatively and
+verified for single-window non-regression (33/33 self-test) + build, but the
+two-window interaction itself can't be exercised by the headless self-test — it
+needs a hands-on check (undock Board, edit in both, confirm sync + persistence).
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

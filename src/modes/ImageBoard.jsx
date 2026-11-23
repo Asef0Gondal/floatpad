@@ -398,7 +398,10 @@ export default function ImageBoard({ active }) {
   };
   const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
   const [commentEdit, setCommentEdit] = useState(null); // {id, text}
-  const [boardReady, setBoardReady] = useState(!isMainBoard);
+  const [boardReady, setBoardReady] = useState(false);
+  const silentApply = useRef(false);
+  const boardChannelRef = useRef(null);
+  const boardId = isMainBoard ? 'main' : 'panel';
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
@@ -428,14 +431,15 @@ export default function ImageBoard({ active }) {
   useEffect(() => { annotationsRef.current = annotations; }, [annotations]);
   useEffect(() => { pickerRef.current = pickerMode; }, [pickerMode]);
 
-  // Restore the autosaved board from disk (main window only), once.
+  // Restore the autosaved board from disk (both windows), once. silentApply
+  // marks this so the restore isn't re-broadcast (avoids regressing the peer).
   useEffect(() => {
-    if (!isMainBoard) { boardLoaded.current = true; setBoardReady(true); return; }
     ipcRenderer.invoke('board-autosave-read').then(raw => {
       if (raw) {
         try {
           const p = JSON.parse(raw);
           const imgs = (p.images || []).map(normalizeImageModel);
+          silentApply.current = true;
           setImages(imgs);
           setNotes(p.notes || []);
           setAnnotations(p.annotations || []);
@@ -448,6 +452,41 @@ export default function ImageBoard({ active }) {
       setBoardReady(true);
     }).catch(() => { boardLoaded.current = true; setBoardReady(true); });
   }, []);
+
+  // Cross-window board sync (main is the single disk writer; panel syncs edits).
+  useEffect(() => {
+    const ch = new BroadcastChannel('floatpad-board-sync');
+    boardChannelRef.current = ch;
+    ch.onmessage = e => {
+      const msg = e.data;
+      if (!msg || msg.source === boardId) return;
+      if (msg.type === 'hello') {
+        if (isMainBoard) {
+          ch.postMessage({ type: 'state', source: 'main', images: imagesRef.current, notes: notesRef.current, annotations: annotationsRef.current });
+        }
+        return;
+      }
+      if (msg.type === 'state') {
+        silentApply.current = true;
+        const imgs = (msg.images || []).map(normalizeImageModel);
+        setImages(imgs);
+        setNotes(msg.notes || []);
+        setAnnotations(msg.annotations || []);
+        const ids = [...imgs, ...(msg.notes || []), ...(msg.annotations || [])]
+          .map(i => i.id).filter(n => typeof n === 'number');
+        ensureUidAbove(Math.max(0, ...ids));
+      }
+    };
+    if (!isMainBoard) ch.postMessage({ type: 'hello', source: 'panel' });
+    return () => { ch.close(); boardChannelRef.current = null; };
+  }, []);
+
+  // Broadcast local edits to the peer window (skip restore/remote applies).
+  useEffect(() => {
+    if (!boardReady) return;
+    if (silentApply.current) { silentApply.current = false; return; }
+    boardChannelRef.current?.postMessage({ type: 'state', source: boardId, images, notes, annotations });
+  }, [images, notes, annotations, boardReady]);
 
   // Autosave to a Rust-written file (no quota ceiling): debounced while editing,
   // flushed on blur / tab-hide so quitting never loses work.
