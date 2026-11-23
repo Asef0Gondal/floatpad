@@ -49,16 +49,16 @@ pub async fn run(app: AppHandle) {
     let _ = win.hide(); // stay invisible for the rest of the test
 
     // 3. mini toggle
-    commands::win_mini_toggle(app.clone(), app.state::<commands::MiniState>());
+    commands::win_mini_toggle(app.clone(), app.get_webview("main").unwrap(), app.state::<commands::MiniState>());
     let scale = win.scale_factor().unwrap_or(1.0);
     let h = win.inner_size().unwrap().to_logical::<u32>(scale).height;
     check!(h == 34, "mini mode height 34 (got {h})");
-    commands::win_mini_toggle(app.clone(), app.state::<commands::MiniState>());
+    commands::win_mini_toggle(app.clone(), app.get_webview("main").unwrap(), app.state::<commands::MiniState>());
     let h = win.inner_size().unwrap().to_logical::<u32>(scale).height;
     check!(h > 34, "mini mode restores height (got {h})");
 
     // 4. resize
-    commands::win_resize(app.clone(), app.state::<commands::MiniState>(), 500, 400);
+    commands::win_resize(app.get_webview("main").unwrap(), app.state::<commands::MiniState>(), 500, 400);
     let size = win.inner_size().unwrap().to_logical::<u32>(scale);
     check!(size.width == 500 && size.height == 400, "resize 500x400 (got {}x{})", size.width, size.height);
 

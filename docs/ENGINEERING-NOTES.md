@@ -523,6 +523,16 @@ line icons, removed the potato emoji, fixed a STALE onboarding claim ("Chrome 12
 uppercase-tracked 700-weight section/standalone titles -> sentence case 600.
 Credit for unslop buried as a tiny <sub> line at the bottom of the README only.
 
+## v2.9.11 — FIX dead close/minimize/resize (user report, persistent)
+
+Root cause: win_close / win_resize / win_mini_toggle resolved the window via
+main_win() = get_webview_window("main"). In some builds that lookup returns None
+(reproduced by the bundle self-test "no main window"), so the commands silently
+no-oped while board tools (which use the calling webview) kept working — exactly
+the user's symptom. Now all three act on the CALLING webview's window (like
+win_opacity already did), so they work regardless of label lookup. Also shipped a
+clean rebuild after a stale bundle binary reproduced the failure.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

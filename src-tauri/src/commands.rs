@@ -116,10 +116,9 @@ pub async fn load_autosave_board(app: AppHandle) -> Option<String> {
 // ── Window controls ──────────────────────────────────────────────────────────
 
 #[tauri::command]
-pub async fn win_close(app: AppHandle) {
-    if let Some(w) = main_win(&app) {
-        let _ = w.hide();
-    }
+pub async fn win_close(webview: Webview) {
+    // Act on the calling window (robust even if the "main" label lookup fails).
+    let _ = webview.window().hide();
 }
 
 #[tauri::command]
@@ -131,12 +130,11 @@ pub async fn win_opacity(webview: Webview, v: f64) {
 }
 
 #[tauri::command]
-pub fn win_resize(app: AppHandle, state: State<'_, MiniState>, w: u32, h: u32) {
+pub fn win_resize(webview: Webview, state: State<'_, MiniState>, w: u32, h: u32) {
     *state.0.lock().unwrap() = None;
-    if let Some(win) = main_win(&app) {
-        let _ = win.set_size(tauri::LogicalSize::new(w, h));
-        let _ = win.center();
-    }
+    let win = webview.window();
+    let _ = win.set_size(tauri::LogicalSize::new(w, h));
+    let _ = win.center();
 }
 
 #[tauri::command]
@@ -187,8 +185,8 @@ pub async fn open_external(app: AppHandle, url: String) {
 }
 
 #[tauri::command]
-pub fn win_mini_toggle(app: AppHandle, state: State<'_, MiniState>) {
-    let Some(win) = main_win(&app) else { return };
+pub fn win_mini_toggle(app: AppHandle, webview: Webview, state: State<'_, MiniState>) {
+    let win = webview.window();
     let on = {
         let mut mini = state.0.lock().unwrap();
         if mini.is_none() {
