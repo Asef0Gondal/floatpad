@@ -131,20 +131,20 @@ function AppMain() {
     setOpacity(next);
   }, [potato]);
 
-  // Toolbar/titlebar buttons must not steal focus from <body>, otherwise the
-  // mode keyboard shortcuts (which guard on activeElement === body) stop working
-  // after any tool click. Preventing mousedown default blocks focus but still
-  // fires click; keyboard Tab focus is unaffected.
+  // Return focus to <body> after any button click so the mode keyboard shortcuts
+  // (which guard on activeElement === body) keep working. Blur on CLICK (after the
+  // action runs) instead of preventDefault on mousedown: preventing mousedown
+  // default can suppress the click itself on WKWebView buttons inside a drag
+  // region, which broke the titlebar close / minimize buttons.
   useEffect(() => {
     const h = e => {
-      if (e.target instanceof Element && e.target.closest('button')) {
+      if (e.target instanceof Element && e.target.closest('button') && !e.target.closest('dialog')) {
         const ae = document.activeElement;
-        if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
-        e.preventDefault();
+        if (ae && ae !== document.body && typeof ae.blur === 'function') ae.blur();
       }
     };
-    document.addEventListener('mousedown', h);
-    return () => document.removeEventListener('mousedown', h);
+    document.addEventListener('click', h);
+    return () => document.removeEventListener('click', h);
   }, []);
 
   // Panel lifecycle: docking back or closing a panel returns the main window to that mode.

@@ -464,6 +464,24 @@ persistence + potato transition correct.
 **Note:** audit passes are now yielding only minor edges — a sign the codebase is
 maturing. Continued churn beyond real findings would be slop.
 
+## v2.9.8 — FIX: titlebar close / minimize buttons dead (user report)
+
+**Cause:** the global focus-guard called `e.preventDefault()` on every button's
+MOUSEDOWN. On WKWebView, preventing mousedown default can suppress the subsequent
+CLICK for buttons inside a `data-tauri-drag-region` (the titlebar) — so close /
+minimize never fired. (Toolbar tools outside the drag region were unaffected,
+which is why only the titlebar buttons broke.)
+
+**Fix:** stop preventing mousedown. Instead, blur the active element on CLICK
+(after the action runs) so focus returns to <body> and the mode shortcuts still
+work. Skip buttons inside <dialog> to preserve modal focus. Clicks now always
+fire; the shortcut-focus behavior is preserved by the post-click blur.
+
+**Learned:** never blanket-preventDefault mousedown to manage focus — it can kill
+the click itself in WebKit drag regions. Manage focus AFTER the click instead.
+Verified IPC registration, permissions, Rust bodies, and layout were all correct
+before isolating the mousedown preventDefault as the culprit.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
