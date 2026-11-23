@@ -1295,7 +1295,7 @@ kbd {
 
 /* ── Scrollable mode toolbars (Board/Write) with explicit scroll buttons ── */
 .toolbar-scroll { position: relative; flex-shrink: 0; }
-.toolbar-scroll-inner { width: 100%; }
+.toolbar-scroll-inner { width: 100%; scroll-padding-inline: 26px; }
 .toolbar-scroll-btn {
   position: absolute; top: 0; bottom: 0; width: 24px; z-index: 6;
   display: flex; align-items: center; justify-content: center;

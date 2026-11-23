@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import {
   IconCamera,
@@ -386,12 +386,25 @@ export default function ImageBoard({ active }) {
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
   const arrangeBtnRef = useRef(null);
-  // Fixed positioning so the dropdown escapes the scrollable toolbar's clipping.
-  const arrangeMenuPos = () => {
+  const [arrangePos, setArrangePos] = useState({ top: 0, left: 0 });
+  // Fixed positioning so the dropdown escapes the scrollable toolbar's clipping;
+  // recomputed on resize/toolbar-scroll while open so it never goes stale.
+  const updateArrangePos = useCallback(() => {
     const r = arrangeBtnRef.current?.getBoundingClientRect();
-    if (!r) return { position: 'fixed', top: 0, left: 0 };
-    return { position: 'fixed', top: r.bottom + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)) };
-  };
+    if (!r) return;
+    setArrangePos({ top: r.bottom + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)) });
+  }, []);
+  useLayoutEffect(() => {
+    if (!showArrange) return undefined;
+    updateArrangePos();
+    const inner = arrangeBtnRef.current?.closest('.toolbar-scroll-inner');
+    window.addEventListener('resize', updateArrangePos);
+    inner?.addEventListener('scroll', updateArrangePos);
+    return () => {
+      window.removeEventListener('resize', updateArrangePos);
+      inner?.removeEventListener('scroll', updateArrangePos);
+    };
+  }, [showArrange, updateArrangePos]);
 
   useEffect(() => { imagesRef.current = images; }, [images]);
   useEffect(() => { notesRef.current = notes; }, [notes]);
@@ -426,7 +439,7 @@ export default function ImageBoard({ active }) {
       if (!boardLoaded.current) return; // don't clobber before the restore lands
       ipcRenderer.invoke('board-autosave-write', JSON.stringify({ images, notes, annotations })).catch(() => {});
     };
-    const t = setTimeout(save, 400);
+    const t = setTimeout(save, 600);
     const onVis = () => { if (document.visibilityState === 'hidden') save(); };
     window.addEventListener('blur', save);
     document.addEventListener('visibilitychange', onVis);
@@ -1787,7 +1800,7 @@ export default function ImageBoard({ active }) {
               Arrange ▾
             </button>
             {showArrange && (
-              <div className="tb-menu board-arrange-menu" style={arrangeMenuPos()}>
+              <div className="tb-menu board-arrange-menu" style={{ position: 'fixed', top: arrangePos.top, left: arrangePos.left }}>
                 <button className="tb-menu-item" onClick={() => packToView()}><span className="tb-menu-label">Pack optimal</span><span className="tb-menu-sub">fit view</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'left')}><span className="tb-menu-label">Align left</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'right')}><span className="tb-menu-label">Align right</span></button>
