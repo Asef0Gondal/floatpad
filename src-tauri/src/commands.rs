@@ -629,6 +629,9 @@ pub async fn board_autosave_clear(app: AppHandle) -> Result<(), String> {
     if let Some(path) = autosave_path(&app) {
         let _ = std::fs::remove_file(path);
     }
+    // Reset the live board in every window too, else the next autosave writes
+    // the old content straight back and the clear doesn't stick.
+    let _ = app.emit("board-cleared", ());
     Ok(())
 }
 

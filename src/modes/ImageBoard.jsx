@@ -490,6 +490,17 @@ export default function ImageBoard({ active }) {
     boardChannelRef.current?.postMessage({ type: 'state', source: boardId, images, notes, annotations });
   }, [images, notes, annotations, boardReady]);
 
+  // Settings "clear board" resets the live board (command emits to all windows).
+  useEffect(() => {
+    const onCleared = () => {
+      silentApply.current = true;
+      setImages([]); setNotes([]); setAnnotations([]);
+      setSelected(new Set());
+    };
+    ipcRenderer.on('board-cleared', onCleared);
+    return () => ipcRenderer.removeListener('board-cleared', onCleared);
+  }, []);
+
   // Autosave to a Rust-written file (no quota ceiling): debounced while editing,
   // flushed on blur / tab-hide so quitting never loses work.
   useEffect(() => {

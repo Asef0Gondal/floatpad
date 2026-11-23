@@ -400,6 +400,25 @@ produced a false FAIL. Replaced the single 20s wait with a unique-id retry loop
 wait for readiness, or it cries wolf and erodes trust in the whole self-test.
 A false FAIL here cost an investigation cycle; the retry removes that noise.
 
+## v2.9.5 — re-audit: two more data-safety bugs
+
+**Found & fixed:**
+1. DATA LOSS: switching .md files (open/new/load) cancelled the debounced
+   autosave timer, dropping the previous file's last <600ms of edits. Added
+   `flushCurrentFile()` (synchronous write) before every file switch.
+2. BUG: Settings "Clear saved board" deleted the autosave file but left the live
+   board intact, so the next blur/quit autosave wrote it straight back — the
+   clear never stuck. Now the command emits `board-cleared` (Tauri event, all
+   windows) and ImageBoard resets its state, so the autosave stays empty.
+
+**Learned (two real traps):**
+- BroadcastChannel does NOT deliver to the sender's own window context. Settings
+  and the main ImageBoard share a window, so a BC "clear" never reached the main
+  board — use a Tauri `app.emit` (reaches every webview incl. the caller) instead.
+- Defining a useCallback helper AFTER a callback that lists it in deps is a TDZ
+  crash; the hidden self-test's JS relay caught it (vitest alone didn't). Order
+  helpers before their consumers.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

@@ -149,12 +149,19 @@ export default function Write({ active }) {
     setCurrentFile(r.path);
   }, [content, currentFile]);
 
+  // Flush pending edits to the open file BEFORE switching away — the debounced
+  // autosave timer is cancelled on switch, so without this the last edits lose.
+  const flushCurrentFile = useCallback(async () => {
+    if (currentFile) { try { await ipcRenderer.invoke('file-write', currentFile, content); } catch { /* ignore */ } }
+  }, [currentFile, content]);
+
   const loadFile = useCallback(async () => {
     const filePath = await ipcRenderer.invoke('dialog-write-open');
     if (!filePath) return;
+    await flushCurrentFile();
     const text = await ipcRenderer.invoke('file-read-text', filePath);
     if (text !== null) { setContent(text); setCurrentFile(filePath); setWriteMode('md'); }
-  }, []);
+  }, [flushCurrentFile]);
 
   // ── .md folder workflow (Markraft parity) ──
   const refreshFiles = useCallback(async dir => {
@@ -169,21 +176,23 @@ export default function Write({ active }) {
     setShowFiles(true);
   }, [refreshFiles]);
   const openMdFile = useCallback(async path => {
+    if (currentFile && currentFile !== path) await flushCurrentFile();
     const text = await ipcRenderer.invoke('file-read-text', path);
     setContent(text ?? '');
     setCurrentFile(path);
     setWriteMode('md');
     setShowFiles(false);
-  }, []);
+  }, [currentFile, flushCurrentFile]);
   const newMdFile = useCallback(async () => {
     if (!folder) return;
+    await flushCurrentFile();
     const path = `${folder}/note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.md`;
     await ipcRenderer.invoke('file-write', path, '');
     await refreshFiles(folder);
     setContent('');
     setCurrentFile(path);
     setWriteMode('md');
-  }, [folder, refreshFiles]);
+  }, [folder, refreshFiles, flushCurrentFile]);
 
   // ── Focus timer ───────────────────────────────────────────
   const toggleTimer = useCallback(() => {

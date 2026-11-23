@@ -18,9 +18,9 @@ export default function Settings({ theme, onToggleTheme, borderless, onToggleBor
   }, []);
 
   const clearBoard = async () => {
-    if (await ipcRenderer.invoke('dialog-ask', 'Delete the autosaved board? Your current on-screen board stays until you quit.', 'Clear saved board')) {
+    if (await ipcRenderer.invoke('dialog-ask', 'Clear the board and its saved copy? This empties the board on screen and cannot be undone.', 'Clear saved board')) {
       setBusy('board');
-      await ipcRenderer.invoke('board-autosave-clear');
+      await ipcRenderer.invoke('board-autosave-clear'); // also resets the live board
       setBusy('');
     }
   };
