@@ -406,13 +406,13 @@ export default function ImageBoard({ active }) {
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
   const arrangeBtnRef = useRef(null);
-  const [arrangePos, setArrangePos] = useState({ bottom: 0, left: 0 });
+  const [arrangePos, setArrangePos] = useState({ bottom: 0, left: 0, maxH: 320 });
   // Fixed positioning so the dropdown escapes the scrollable toolbar's clipping;
   // recomputed on resize/toolbar-scroll while open so it never goes stale.
   const updateArrangePos = useCallback(() => {
     const r = arrangeBtnRef.current?.getBoundingClientRect();
     if (!r) return;
-    setArrangePos({ bottom: window.innerHeight - r.top + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)) });
+    setArrangePos({ bottom: window.innerHeight - r.top + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)), maxH: Math.max(120, r.top - 10) });
   }, []);
   useLayoutEffect(() => {
     if (!showArrange) return undefined;
@@ -1961,7 +1961,7 @@ export default function ImageBoard({ active }) {
               Arrange ▾
             </button>
             {showArrange && (
-              <div className="tb-menu board-arrange-menu" style={{ position: 'fixed', bottom: arrangePos.bottom, left: arrangePos.left }}>
+              <div className="tb-menu board-arrange-menu" style={{ position: 'fixed', bottom: arrangePos.bottom, left: arrangePos.left, maxHeight: arrangePos.maxH }}>
                 <button className="tb-menu-item" onClick={() => packToView()}><span className="tb-menu-label">Pack optimal</span><span className="tb-menu-sub">fit view</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'left')}><span className="tb-menu-label">Align left</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'right')}><span className="tb-menu-label">Align right</span></button>

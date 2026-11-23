@@ -450,6 +450,20 @@ direction must flip); native child webviews sit above the DOM top layer, so
 modals must hide them; audits of older commits re-report already-fixed bugs —
 always re-verify against HEAD.
 
+## v2.9.7 — audit pass: arrange menu top-overflow (mostly clean)
+
+**Fixed:** the bottom-anchored Arrange menu (max-height 320px) could overflow the
+TOP of the window on short windows (min height 260px). Now its max-height is
+clamped to the space above the button (r.top - 10), so it always fits.
+
+**Checked clean this pass:** all pack variants use the view anchor; video already
+shows a "Cannot play this file" dialog on error; no dead native alert/confirm/
+prompt; browser URL normalization + webview error handling sound; opacity
+persistence + potato transition correct.
+
+**Note:** audit passes are now yielding only minor edges — a sign the codebase is
+maturing. Continued churn beyond real findings would be slop.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
