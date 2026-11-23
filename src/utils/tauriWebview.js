@@ -82,6 +82,12 @@ export function createTauriWebview({ host, url }) {
   // mini mode, window resizes). Zero-size rect → hidden.
   const syncBounds = () => {
     if (!created || destroyed || !host.isConnected) return;
+    // A native WKWebView subview paints ABOVE the host DOM (incl. <dialog> top
+    // layer), so hide it while any modal is open or it would obscure the dialog.
+    if (document.querySelector('dialog[open]')) {
+      if (lastBounds !== null) { invoke('web_hide', { label }).catch(() => {}); lastBounds = null; }
+      return;
+    }
     const r = host.getBoundingClientRect();
     const b = { x: Math.round(r.x), y: Math.round(r.y), w: Math.round(r.width), h: Math.round(r.height) };
     if (b.w < 2 || b.h < 2) {

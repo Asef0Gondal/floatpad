@@ -419,6 +419,37 @@ A false FAIL here cost an investigation cycle; the retry removes that noise.
   crash; the hidden self-test's JS relay caught it (vitest alone didn't). Order
   helpers before their consumers.
 
+## v2.9.6 — swarm-audit triage (8 real fixed, 2 rejected)
+
+Reviewed another agent's swarm audit (of v2.9.3) critically against current code.
+**Fixed (verified real):**
+1. Arrange dropdown opened OFF-SCREEN below the bottom toolbar (regression from
+   the toolbar move) → now opens upward (bottom-anchored).
+3. packImages jumped items to world (0,0) (off-screen when panned) → anchored to
+   the current view's world top-left (+test).
+4. Panel startup race: stale disk restore could overwrite main's live hello state
+   → panel now sends hello AFTER its disk restore lands.
+5. Panel drag/resize wrote prefs.json synchronously per pixel → debounced (250ms
+   generational, per-panel) like the main window.
+6. OCR on a tokio worker leaked Cocoa temp allocations → wrapped in
+   objc2::rc::autoreleasepool.
+7. shots index.json read-modify-write was unsynchronized → SHOTS_LOCK mutex.
+8. chrome-hotspot (z215) swallowed titlebar clicks when visible → pointer-events
+   :none while chrome-visible.
+10. Native child WKWebView painted above modal dialogs → syncBounds hides it
+   while any <dialog[open]> exists.
+
+**Rejected / already done:**
+- #9 (file-switch flush) was ALREADY fixed in v2.9.5 — audit was of older code.
+- #2 (standalone board loses work if main never mounted board) is NOT reachable
+  via the UI: undocking requires the main Board to be mounted. The suggested
+  "panel writes if no peer" fallback risks double-writers; not forced.
+
+**Learned:** moving a toolbar invalidates every dropdown anchored to it (open
+direction must flip); native child webviews sit above the DOM top layer, so
+modals must hide them; audits of older commits re-report already-fixed bugs —
+always re-verify against HEAD.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

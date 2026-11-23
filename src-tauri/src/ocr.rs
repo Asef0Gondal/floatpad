@@ -12,7 +12,7 @@ pub fn recognize(bytes: &[u8]) -> Result<String, String> {
         VNImageRequestHandler, VNRecognizeTextRequest, VNRequest, VNRequestTextRecognitionLevel,
     };
 
-    unsafe {
+    objc2::rc::autoreleasepool(|_| unsafe {
         let data = CFData::from_bytes(bytes);
         let source = CGImageSource::with_data(&data, None).ok_or("cannot decode image")?;
         let cg = source
@@ -46,7 +46,7 @@ pub fn recognize(bytes: &[u8]) -> Result<String, String> {
             }
         }
         Ok(lines.join("\n"))
-    }
+    })
 }
 
 #[cfg(not(target_os = "macos"))]

@@ -406,13 +406,13 @@ export default function ImageBoard({ active }) {
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
   const arrangeBtnRef = useRef(null);
-  const [arrangePos, setArrangePos] = useState({ top: 0, left: 0 });
+  const [arrangePos, setArrangePos] = useState({ bottom: 0, left: 0 });
   // Fixed positioning so the dropdown escapes the scrollable toolbar's clipping;
   // recomputed on resize/toolbar-scroll while open so it never goes stale.
   const updateArrangePos = useCallback(() => {
     const r = arrangeBtnRef.current?.getBoundingClientRect();
     if (!r) return;
-    setArrangePos({ top: r.bottom + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)) });
+    setArrangePos({ bottom: window.innerHeight - r.top + 5, left: Math.max(8, Math.min(r.left, window.innerWidth - 210)) });
   }, []);
   useLayoutEffect(() => {
     if (!showArrange) return undefined;
@@ -450,6 +450,9 @@ export default function ImageBoard({ active }) {
       }
       boardLoaded.current = true;
       setBoardReady(true);
+      // Ask main for its LIVE state only after our disk restore lands, so the
+      // fresher broadcast state overrides stale disk (not the other way round).
+      if (!isMainBoard) boardChannelRef.current?.postMessage({ type: 'hello', source: 'panel' });
     }).catch(() => { silentApply.current = true; boardLoaded.current = true; setBoardReady(true); });
   }, []);
 
@@ -479,7 +482,6 @@ export default function ImageBoard({ active }) {
         ensureUidAbove(Math.max(0, ...ids));
       }
     };
-    if (!isMainBoard) ch.postMessage({ type: 'hello', source: 'panel' });
     return () => { ch.close(); boardChannelRef.current = null; };
   }, []);
 
@@ -1164,8 +1166,10 @@ export default function ImageBoard({ active }) {
 
   const packToView = useCallback((orderIds = null) => {
     const r = boardRef.current.getBoundingClientRect();
-    const { scale } = tf.current;
-    setImages(prev => packImages(prev, targetIds(), r.width / scale, r.height / scale, orderIds));
+    const { scale, tx, ty } = tf.current;
+    // Anchor to the current view's world top-left so packing while panned keeps
+    // the images on-screen instead of jumping to world (0,0).
+    setImages(prev => packImages(prev, targetIds(), r.width / scale, r.height / scale, orderIds, -tx / scale, -ty / scale));
     setShowArrange(false);
   }, [targetIds]);
 
@@ -1957,7 +1961,7 @@ export default function ImageBoard({ active }) {
               Arrange ▾
             </button>
             {showArrange && (
-              <div className="tb-menu board-arrange-menu" style={{ position: 'fixed', top: arrangePos.top, left: arrangePos.left }}>
+              <div className="tb-menu board-arrange-menu" style={{ position: 'fixed', bottom: arrangePos.bottom, left: arrangePos.left }}>
                 <button className="tb-menu-item" onClick={() => packToView()}><span className="tb-menu-label">Pack optimal</span><span className="tb-menu-sub">fit view</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'left')}><span className="tb-menu-label">Align left</span></button>
                 <button className="tb-menu-item" onClick={() => applyArrange(alignImages, 'right')}><span className="tb-menu-label">Align right</span></button>

@@ -1280,6 +1280,7 @@ kbd {
   z-index: 215; display: none;
 }
 .app.borderless .chrome-hotspot { display: block; }
+.app.borderless.chrome-visible .chrome-hotspot { pointer-events: none; }
 
 /* Borderless: titlebar overlays the top and slides away; content fills the window */
 .app.borderless .titlebar {

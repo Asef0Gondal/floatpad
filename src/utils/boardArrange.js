@@ -90,7 +90,7 @@ export function stackImages(images, ids) {
  * Tallest-first shelves; scales everything down uniformly if it doesn't fit.
  * `orderIds` overrides the sort (arrange by name / addition).
  */
-export function packImages(images, ids, viewW, viewH, orderIds = null) {
+export function packImages(images, ids, viewW, viewH, orderIds = null, anchorX = 0, anchorY = 0) {
   const sel = pick(images, ids);
   if (!sel.length) return images;
   let ordered;
@@ -124,8 +124,8 @@ export function packImages(images, ids, viewW, viewH, orderIds = null) {
   const map = new Map();
   for (const p of placements) {
     map.set(p.id, {
-      x: Math.round(p.x * scale),
-      y: Math.round(p.y * scale),
+      x: Math.round(anchorX + p.x * scale),
+      y: Math.round(anchorY + p.y * scale),
       w: Math.max(8, Math.round(p.w * scale)),
       h: Math.max(8, Math.round(p.h * scale)),
     });

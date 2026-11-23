@@ -15,6 +15,8 @@ pub struct ShotMeta {
     pub ext: String,
 }
 
+static SHOTS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 fn shots_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("shots");
     std::fs::create_dir_all(&dir).map_err(|e| e.to_string())?;
@@ -99,6 +101,7 @@ pub fn save(app: &AppHandle, data_url: &str, name: &str, tags: Vec<String>) -> R
         created: now_ms(),
         ext: ext.into(),
     };
+    let _guard = SHOTS_LOCK.lock().unwrap();
     let mut index = load_index(app);
     index.insert(0, meta.clone());
     save_index(app, &index)?;
@@ -160,6 +163,7 @@ pub async fn shot_load(app: AppHandle, id: String) -> Option<String> {
 pub async fn shot_delete(app: AppHandle, id: String) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         let dir = shots_dir(&app)?;
+        let _guard = SHOTS_LOCK.lock().unwrap();
         let mut index = load_index(&app);
         if let Some(pos) = index.iter().position(|m| m.id == id) {
             let meta = index.remove(pos);
@@ -176,6 +180,7 @@ pub async fn shot_delete(app: AppHandle, id: String) -> Result<(), String> {
 #[tauri::command]
 pub async fn shot_update(app: AppHandle, id: String, name: String, tags: Vec<String>) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
+        let _guard = SHOTS_LOCK.lock().unwrap();
         let mut index = load_index(&app);
         if let Some(meta) = index.iter_mut().find(|m| m.id == id) {
             meta.name = if name.trim().is_empty() { meta.name.clone() } else { name.trim().into() };
@@ -192,6 +197,7 @@ pub async fn shot_update(app: AppHandle, id: String, name: String, tags: Vec<Str
 pub async fn shots_clear(app: AppHandle) -> Result<(), String> {
     tauri::async_runtime::spawn_blocking(move || {
         let dir = shots_dir(&app)?;
+        let _guard = SHOTS_LOCK.lock().unwrap();
         let index = load_index(&app);
         for m in &index {
             let _ = std::fs::remove_file(dir.join(format!("{}.{}", m.id, m.ext)));

@@ -1,6 +1,6 @@
 [package]
 name = "floatpad"
-version = "2.9.5"
+version = "2.9.6"
 description = "FloatPad — lean always-on-top reference pad"
 authors = ["Asif Gondal"]
 license = "MIT"

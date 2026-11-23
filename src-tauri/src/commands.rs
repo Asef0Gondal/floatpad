@@ -219,6 +219,26 @@ fn save_panel_size(app: &AppHandle, win: &tauri::WebviewWindow, id: &str) {
     save_prefs(app, patch);
 }
 
+fn save_panel_size_debounced(app: &AppHandle, win: &tauri::WebviewWindow, id: &str) {
+    static GENS: std::sync::OnceLock<std::sync::Mutex<std::collections::HashMap<String, u64>>> =
+        std::sync::OnceLock::new();
+    let gens = GENS.get_or_init(|| std::sync::Mutex::new(std::collections::HashMap::new()));
+    let gen = {
+        let mut m = gens.lock().unwrap();
+        let e = m.entry(id.to_string()).or_insert(0);
+        *e += 1;
+        *e
+    };
+    let app = app.clone();
+    let win = win.clone();
+    let id = id.to_string();
+    tauri::async_runtime::spawn(async move {
+        tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+        if gens.lock().unwrap().get(&id).copied().unwrap_or(0) != gen { return; }
+        save_panel_size(&app, &win, &id);
+    });
+}
+
 #[tauri::command]
 pub async fn panel_undock(app: AppHandle, id: String) {
     let label = format!("panel-{id}");
@@ -265,7 +285,7 @@ pub async fn panel_undock(app: AppHandle, id: String) {
     let id2 = id.clone();
     let win2 = win.clone();
     win.on_window_event(move |e| match e {
-        WindowEvent::Resized(_) | WindowEvent::Moved(_) => save_panel_size(&h2, &win2, &id2),
+        WindowEvent::Resized(_) | WindowEvent::Moved(_) => save_panel_size_debounced(&h2, &win2, &id2),
         WindowEvent::Focused(_) => {
             let _ = win2.set_ignore_cursor_events(false);
         }

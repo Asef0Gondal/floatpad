@@ -142,3 +142,19 @@ describe('duplicateImages', () => {
     expect(duplicateImages(base, ids()).images).toBe(base);
   });
 });
+describe('packImages view anchor', () => {
+  it('offsets packed positions by the anchor (stays on-screen when panned)', async () => {
+    const { packImages } = await import('../src/utils/boardArrange');
+    const imgs = [
+      { id: 1, x: 500, y: 400, w: 100, h: 80 },
+      { id: 2, x: 700, y: 600, w: 120, h: 90 },
+    ];
+    const ids = new Set([1, 2]);
+    const atOrigin = packImages(imgs, ids, 800, 600);
+    const anchored = packImages(imgs, ids, 800, 600, null, 1000, 2000);
+    const o1 = atOrigin.find(i => i.id === 1);
+    const a1 = anchored.find(i => i.id === 1);
+    expect(a1.x - o1.x).toBe(1000);
+    expect(a1.y - o1.y).toBe(2000);
+  });
+});
