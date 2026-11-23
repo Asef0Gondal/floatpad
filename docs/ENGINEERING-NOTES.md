@@ -200,6 +200,24 @@ Floating auto-saves; reopening from the library passes persist=false.
   grid fast; SVG/unsupported formats fall back to copying the original.
 - Verified end-to-end in the hidden self-test: save→list→load→update→delete.
 
+## v2.4.0 — Loop 3: Settings, crop, accessibility
+
+**Changed:** a consolidated Settings `<dialog>` (theme / potato / borderless +
+clear-board-autosave / clear-shot-library with confirm + version/about). An
+undoable crop tool (`✂`): a `<dialog>` with a draggable/resizable crop box over
+the image; Apply crops via canvas and replaces the source (recorded by undo).
+Accessibility: global `:focus-visible` ring; dialogs use native `<dialog>`
+(implicit role/aria-modal/focus-trap). New Rust commands board_autosave_clear /
+shots_clear.
+
+**Learned:**
+- Crop operates on the untransformed source, so applying it resets flip/rotation
+  to match what the crop preview showed (grayscale/opacity are render flags, kept).
+- Settings reads the version from package.json via a Vite JSON import — no
+  hard-coded version string to go stale.
+- Clear-data actions confirm via the dialog plugin (WKWebView has no native
+  confirm) and run off-thread in Rust.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

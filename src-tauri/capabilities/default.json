@@ -71,6 +71,8 @@
     "allow-shots-list",
     "allow-shot-load",
     "allow-shot-delete",
-    "allow-shot-update"
+    "allow-shot-update",
+    "allow-shots-clear",
+    "allow-board-autosave-clear"
   ]
 }

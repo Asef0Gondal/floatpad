@@ -261,6 +261,8 @@ pub fn run() {
             shots::shot_load,
             shots::shot_delete,
             shots::shot_update,
+            shots::shots_clear,
+            commands::board_autosave_clear,
             commands::autosave_board,
             commands::load_autosave_board,
         ])

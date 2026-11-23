@@ -21,6 +21,7 @@ import { ipcRenderer } from '../ipc';
 import { evalInWebview } from '../utils/tauriWebview';
 import ScrollToolbar from '../components/ScrollToolbar';
 import ShotsLibrary from '../components/ShotsLibrary';
+import CropDialog from '../components/CropDialog';
 import {
   createHistory, pushHistory, undoHistory, redoHistory, currentSnapshot,
   canUndo as histCanUndo, canRedo as histCanRedo,
@@ -386,6 +387,15 @@ export default function ImageBoard({ active }) {
   const [ocr, setOcr] = useState(null);
   const [scrapeBusy, setScrapeBusy] = useState(false);
   const [showShots, setShowShots] = useState(false);
+  const [cropTarget, setCropTarget] = useState(null);
+  const applyCrop = (newSrc, newW, newH) => {
+    setImages(prev => prev.map(i => (i.id === cropTarget?.id ? {
+      ...i, src: newSrc, origW: newW, origH: newH,
+      w: i.w, h: Math.max(8, Math.round(i.w * (newH / newW))),
+      flipX: false, flipY: false, rotation: 0,
+    } : i)));
+    setCropTarget(null);
+  };
   const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
   const [commentEdit, setCommentEdit] = useState(null); // {id, text}
   const [boardReady, setBoardReady] = useState(!isMainBoard);
@@ -2106,6 +2116,13 @@ export default function ImageBoard({ active }) {
                     >
                       ⟲
                     </button>
+                    <button
+                      className="bia-btn"
+                      onClick={e => { e.stopPropagation(); setCropTarget(img); }}
+                      title="Crop image"
+                    >
+                      ✂
+                    </button>
                     {img.source && (
                       <button
                         className="bia-btn"
@@ -2272,6 +2289,7 @@ export default function ImageBoard({ active }) {
         )}
 
         {showShots && <ShotsLibrary onClose={() => setShowShots(false)} />}
+        {cropTarget && <CropDialog img={cropTarget} onApply={applyCrop} onClose={() => setCropTarget(null)} />}
 
         {ocr && (
           <div className="ocr-panel">

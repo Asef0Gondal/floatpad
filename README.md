@@ -56,7 +56,7 @@ Built for video editors, designers and developers who need a second screen that 
 - **Paste a URL** → every image on that page lands on the board
 - **Focus mode**: double-click an image (or `F`) to zoom in, `←`/`→` to step, `Esc` to exit, built-in slideshow
 - **Arrange**: align, distribute, normalize height/width/size, stack, shelf-pack (optimal / by name / by addition)
-- **Per-image powers**: flip, rotate, grayscale (`⌥G`), opacity, lock, duplicate (`⌘D`), reset, open source
+- **Per-image powers**: flip, rotate, grayscale (`⌥G`), opacity, lock, duplicate (`⌘D`), reset, open source, and **crop** (`✂`, undoable)
 - **OCR any image** (`T`): extracted text with one-click copy, plus detected links, emails and phone numbers (macOS Vision)
 - **Float any image as a shot** (`⧉`): its own frameless always-on-top mini window
 - **Shot Library**: floated images are saved to disk with thumbnails; browse, search by name/tag, rename, retag, reopen or delete them (⧉ Shots button)
@@ -101,7 +101,8 @@ Built for video editors, designers and developers who need a second screen that 
 - **Responsive title bar**: controls compress as the window narrows; secondary controls fold into a ⋯ menu instead of disappearing, and a dedicated grip strip is always available for moving the window
 - **Window sizes**: Tiny `400×320`, Small `580×440`, Medium `700×560`, Large `960×700`, Wide `1100×620`
 - **Standalone panels**: undock any mode into its own floating window and dock it back later
-- **Dark / light themes** with the choice persisted
+- **Settings panel** (`⚙`): theme, potato mode, borderless default, and data management (clear autosaved board / shot library)
+- **Dark / light themes** with the choice persisted; visible keyboard-focus rings for accessibility
 - **Potato mode** cuts rendering work for low CPU/VRAM use while gaming or rendering
 - **Menu-bar app**: closing hides the window instead of quitting; `⌘⇧Space` brings it back
 - **`⌘⇧Space` is also a panic key**: it dismisses the screenshot overlay and restores click control if the window is detached, then toggles visibility

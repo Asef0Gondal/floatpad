@@ -623,6 +623,15 @@ pub fn shot_payload(webview: Webview, payloads: State<'_, ShotPayloads>) -> Opti
     payloads.0.lock().unwrap().remove(&label)
 }
 
+/// Delete the board autosave file (Settings → clear saved board).
+#[tauri::command]
+pub async fn board_autosave_clear(app: AppHandle) -> Result<(), String> {
+    if let Some(path) = autosave_path(&app) {
+        let _ = std::fs::remove_file(path);
+    }
+    Ok(())
+}
+
 /// OCR a board image (data URL) → recognized text. macOS Vision, off-main.
 #[tauri::command]
 pub async fn ocr_image(data_url: String) -> Result<Value, String> {

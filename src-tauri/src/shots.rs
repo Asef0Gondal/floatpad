@@ -190,3 +190,19 @@ pub async fn shot_update(app: AppHandle, id: String, name: String, tags: Vec<Str
     .await
     .map_err(|e| e.to_string())?
 }
+/// Delete every shot (Settings → clear shot library).
+#[tauri::command]
+pub async fn shots_clear(app: AppHandle) -> Result<(), String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        let dir = shots_dir(&app)?;
+        let index = load_index(&app);
+        for m in &index {
+            let _ = std::fs::remove_file(dir.join(format!("{}.{}", m.id, m.ext)));
+            let _ = std::fs::remove_file(dir.join(format!("{}_thumb.png", m.id)));
+        }
+        save_index(&app, &[])?;
+        Ok(())
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}

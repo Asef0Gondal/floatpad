@@ -6,6 +6,7 @@ import Write       from './modes/Write';
 import ShortcutsOverlay from './components/ShortcutsOverlay';
 import Onboarding       from './components/Onboarding';
 import ShotView         from './components/ShotView';
+import Settings        from './components/Settings';
 import {
   IconImage, IconPlay, IconWrite, IconSize, IconSun, IconMoon,
   IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock, IconBorderless,
@@ -68,6 +69,7 @@ function AppMain() {
   const [borderless, setBorderless] = useState(() => localStorage.getItem('fp_borderless') === '1');
   const [chromeVisible, setChromeVisible] = useState(false);
   const [showKeys,   setShowKeys]   = useState(false);
+  const [showSettings, setShowSettings] = useState(false);
   const [showOnboarding, setShowOnboarding] = useState(
     () => !panelParam && !localStorage.getItem(SEEN_KEY)
   );
@@ -213,13 +215,13 @@ function AppMain() {
 
   // In borderless mode the chrome auto-hides unless a menu/overlay is open.
   useEffect(() => {
-    if (!borderless || miniMode || showSizes || showMore || showKeys || showOnboarding) {
+    if (!borderless || miniMode || showSizes || showMore || showKeys || showOnboarding || showSettings) {
       revealChrome();
       return undefined;
     }
     hideChromeSoon(700);
     return () => { if (chromeHideTimerRef.current) clearTimeout(chromeHideTimerRef.current); };
-  }, [borderless, miniMode, showSizes, showMore, showKeys, showOnboarding, revealChrome, hideChromeSoon]);
+  }, [borderless, miniMode, showSizes, showMore, showKeys, showOnboarding, showSettings, revealChrome, hideChromeSoon]);
 
   const undockPanel = useCallback((panelId) => {
     ipcRenderer.send('panel-undock', panelId);
@@ -274,6 +276,11 @@ function AppMain() {
   const helpBtn = (
     <button className="tb-btn" onClick={()=>setShowKeys(s=>!s)} title="Shortcuts (?)">
       <IconHelp size={14}/>
+    </button>
+  );
+  const settingsBtn = (
+    <button className="tb-btn" onClick={()=>setShowSettings(s=>!s)} title="Settings" aria-label="Settings">
+      ⚙
     </button>
   );
 
@@ -387,6 +394,7 @@ function AppMain() {
             </div>
 
             {helpBtn}
+            {settingsBtn}
           </div>
 
           {/* Opacity */}
@@ -413,6 +421,7 @@ function AppMain() {
                 {bottomBtn}
                 {borderlessBtn}
                 {helpBtn}
+                {settingsBtn}
                 <div className="tb-more-sep"/>
                 {SIZE_PRESETS.map(p=>(
                   <button key={p.label} className="tb-menu-item" onClick={()=>{handleResize(p.w,p.h); setShowMore(false);}}>
@@ -456,6 +465,7 @@ function AppMain() {
       )}
 
       {showKeys       && <ShortcutsOverlay onClose={()=>setShowKeys(false)}/>}
+      {showSettings   && <Settings theme={theme} onToggleTheme={toggleTheme} borderless={borderless} onToggleBorderless={toggleBorderless} potato={potato} onTogglePotato={()=>setPotato(p=>!p)} onClose={()=>setShowSettings(false)}/>}
       {showOnboarding && <Onboarding onDone={dismissOnboarding}/>}
     </div>
   );

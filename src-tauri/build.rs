@@ -38,6 +38,8 @@ fn main() {
                 "shot_load",
                 "shot_delete",
                 "shot_update",
+                "shots_clear",
+                "board_autosave_clear",
                 "autosave_board",
                 "load_autosave_board",
             ]),
