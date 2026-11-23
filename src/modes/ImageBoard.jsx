@@ -710,7 +710,7 @@ export default function ImageBoard({ active }) {
         window.removeEventListener('mousemove', mv);
         window.removeEventListener('mouseup', up);
       };
-      document.body.style.cursor = 'grabbing';
+      document.body.style.cursor = '';
       window.addEventListener('mousemove', mv);
       window.addEventListener('mouseup', up);
       return;
@@ -921,7 +921,7 @@ export default function ImageBoard({ active }) {
       }
     }
 
-    document.body.style.cursor = 'grabbing';
+    document.body.style.cursor = '';
 
     const mv = event => {
       const { tx: nextTx, ty: nextTy, scale: nextScale } = tf.current;

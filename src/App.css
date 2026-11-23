@@ -555,8 +555,8 @@ textarea { -webkit-user-select:text; user-select:text; }
 
 /* Resize handle */
 .board-item-resize {
-  position:absolute; bottom:-5px; right:-5px;
-  width:12px; height:12px;
+  position:absolute; bottom:-7px; right:-7px;
+  width:16px; height:16px;
   background:var(--fp-accent); border-radius:2px;
   cursor:se-resize; display:none; z-index:10;
 }
@@ -1482,3 +1482,18 @@ button:focus:not(:focus-visible) { outline: none; }
 .board-wrap .mode-toolbar,
 .write-wrap .mode-toolbar { border-bottom: none; border-top: 1px solid var(--fp-border); }
 .write-wrap .write-files-bar { border-bottom: none; border-top: 1px solid var(--fp-border); }
+
+/* ── Stable cursor ──
+   The grab / pointer cursor flipped on every mouse-move (board, items, titlebar
+   strip, grab handle, every button), which was distracting. Use the default
+   arrow everywhere; a special cursor only appears where it carries meaning:
+   text fields, the drawing/picker crosshair, and the crop / resize handles. */
+* { cursor: default !important; }
+input, textarea, [contenteditable="true"] { cursor: text !important; }
+input[type="range"], input[type="checkbox"], input[type="color"] { cursor: default !important; }
+.board.picker-mode, .board.picker-mode *,
+.board.drawing-mode, .board.drawing-mode * { cursor: crosshair !important; }
+.board-item-resize { cursor: se-resize !important; }
+.crop-box { cursor: move !important; }
+.crop-nw, .crop-se { cursor: nwse-resize !important; }
+.crop-ne, .crop-sw { cursor: nesw-resize !important; }

@@ -1,7 +1,7 @@
 {
   "name": "floatpad",
   "productName": "FloatPad",
-  "version": "2.9.8",
+  "version": "2.9.9",
   "description": "Lean always-on-top reference pad \u2014 board, video, web and write modes in one floating overlay. Native Rust/Tauri.",
   "author": "Asif Gondal",
   "license": "MIT",

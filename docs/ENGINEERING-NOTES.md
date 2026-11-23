@@ -482,6 +482,24 @@ the click itself in WebKit drag regions. Manage focus AFTER the click instead.
 Verified IPC registration, permissions, Rust bodies, and layout were all correct
 before isolating the mousedown preventDefault as the culprit.
 
+## v2.9.9 — stable cursor (user rage-fix) + bigger resize handle
+
+**Changed (user feedback: cursor flicker was maddening):** the cursor flipped
+between grab / grabbing / pointer on every mouse-move across the board, items,
+titlebar strip, grab handle and every button. Now the default arrow is used
+everywhere; a special cursor only appears where it carries meaning (text fields,
+drawing/picker crosshair, crop + resize handles). Removed the JS body.cursor
+'grabbing' flips during pan/drag. Enlarged the per-image resize handle 12px to 16px
+so it is easier to catch.
+
+**Learned:**
+- A blanket `* { cursor: default !important }` plus targeted !important exceptions
+  is the reliable way to override the many higher-specificity cursor rules.
+- The hidden self-test produces an EMPTY log (exit 0, 0 passes) when a FloatPad
+  instance is already running: the single-instance plugin forwards the launch to
+  the running app and exits before the self-test runs. Quit the running instance
+  first. (Cost a couple of confusing debug cycles.)
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
