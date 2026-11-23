@@ -1352,7 +1352,7 @@ dependencies = [
 
 [[package]]
 name = "floatpad"
-version = "2.9.3"
+version = "2.9.4"
 dependencies = [
  "base64 0.23.1",
  "block2",
