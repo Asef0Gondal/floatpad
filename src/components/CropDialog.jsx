@@ -14,13 +14,22 @@ export default function CropDialog({ img, onApply, onClose }) {
 
   const [crop, setCrop] = useState({ x: 0, y: 0, w: origW, h: origH });
   const dragRef = useRef(null);
+  const dragListenersRef = useRef(null);
 
   useEffect(() => {
     const d = ref.current;
     d.showModal();
     const onCancel = () => closeRef.current();
     d.addEventListener('cancel', onCancel);
-    return () => { d.removeEventListener('cancel', onCancel); d.close(); };
+    return () => {
+      d.removeEventListener('cancel', onCancel); d.close();
+      // drop any in-flight drag listeners if the dialog closes mid-drag
+      if (dragListenersRef.current) {
+        window.removeEventListener('pointermove', dragListenersRef.current.move);
+        window.removeEventListener('pointerup', dragListenersRef.current.up);
+        dragListenersRef.current = null;
+      }
+    };
   }, []);
 
   const clamp = (v, lo, hi) => Math.max(lo, Math.min(hi, v));
@@ -50,11 +59,13 @@ export default function CropDialog({ img, onApply, onClose }) {
     };
     const up = () => {
       dragRef.current = null;
+      dragListenersRef.current = null;
       window.removeEventListener('pointermove', move);
       window.removeEventListener('pointerup', up);
     };
     window.addEventListener('pointermove', move);
     window.addEventListener('pointerup', up);
+    dragListenersRef.current = { move, up };
   }, [crop, scale, origW, origH]);
 
   const apply = useCallback(async () => {

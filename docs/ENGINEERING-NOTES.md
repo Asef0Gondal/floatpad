@@ -372,6 +372,23 @@ component structure or the absolutely-positioned overlays.
 - Hardening: .md new-file names now include a random suffix (Date.now() alone
   could collide within a millisecond and clobber a file).
 
+## v2.9.3 — audit: board-sync data-loss races + crop listener leak
+
+**Found & fixed (fresh audit of the sync code):**
+1. DATA LOSS: on a null/corrupt autosave, `silentApply` wasn't set, so the
+   `boardReady` flip broadcast an EMPTY board to an open panel and wiped it.
+   Fix: mark the initial restore silent on ALL paths (success/null/corrupt/catch).
+2. DATA LOSS: a panel's `hello` was answered by main even before main finished
+   restoring → main replied with its still-empty state, wiping the panel's
+   disk-restored content. Fix: only answer hello once `boardLoaded` is true.
+3. LEAK: CropDialog added window pointermove/pointerup listeners on drag and
+   only removed them on pointerup — closing the dialog mid-drag (Escape) leaked
+   them. Fix: track + remove them in the dialog's unmount cleanup.
+
+**Learned:** cross-window sync needs the initial/empty state to be silent on
+EVERY restore path, and handshake replies must wait until local state is loaded
+— otherwise "empty" propagates and destroys the peer's data.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

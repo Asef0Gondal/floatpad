@@ -435,11 +435,11 @@ export default function ImageBoard({ active }) {
   // marks this so the restore isn't re-broadcast (avoids regressing the peer).
   useEffect(() => {
     ipcRenderer.invoke('board-autosave-read').then(raw => {
+      silentApply.current = true; // initial restore never broadcasts (even if empty/corrupt)
       if (raw) {
         try {
           const p = JSON.parse(raw);
           const imgs = (p.images || []).map(normalizeImageModel);
-          silentApply.current = true;
           setImages(imgs);
           setNotes(p.notes || []);
           setAnnotations(p.annotations || []);
@@ -450,7 +450,7 @@ export default function ImageBoard({ active }) {
       }
       boardLoaded.current = true;
       setBoardReady(true);
-    }).catch(() => { boardLoaded.current = true; setBoardReady(true); });
+    }).catch(() => { silentApply.current = true; boardLoaded.current = true; setBoardReady(true); });
   }, []);
 
   // Cross-window board sync (main is the single disk writer; panel syncs edits).
@@ -461,7 +461,9 @@ export default function ImageBoard({ active }) {
       const msg = e.data;
       if (!msg || msg.source === boardId) return;
       if (msg.type === 'hello') {
-        if (isMainBoard) {
+        // Only answer once restored — replying with a not-yet-loaded (empty)
+        // board would wipe the panel's disk-restored content.
+        if (isMainBoard && boardLoaded.current) {
           ch.postMessage({ type: 'state', source: 'main', images: imagesRef.current, notes: notesRef.current, annotations: annotationsRef.current });
         }
         return;
