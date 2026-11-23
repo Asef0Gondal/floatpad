@@ -25,6 +25,11 @@
 
 ---
 
+<p align="center">
+  <img src="docs/assets/demo/floatpad-hero.png" width="820" alt="FloatPad floating over a video editor at reduced opacity" />
+</p>
+<p align="center"><em>FloatPad floating over an editor at 70% opacity. References stay on top, never in the way.</em></p>
+
 > FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference, so I built myself an always-on-top pad that keeps everything in view.
 >
 > I have ADHD and OCD and had some free time, so I made this instead of a video based on a shitty brief. That's the entire origin story.
