@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>FloatPad — Floating Reference Board &amp; Moodboard | PureRef Alternative (macOS, Windows, Linux)</title>
+<meta name="description" content="FloatPad is a free, open-source floating reference board and moodboard — a PureRef and ScreenFloat alternative built in Rust + Tauri. Keep images, screenshots, GIFs, video, web pages and markdown notes always on top, with OCR and region screenshots. macOS, Windows, Linux." />
+<meta name="keywords" content="FloatPad, PureRef alternative, ScreenFloat alternative, BeeRef alternative, reference board, moodboard, reference images, always on top, floating window, image viewer, OCR, screenshot, Tauri, Rust, macOS, Windows, Linux, creative tools, design tools" />
+<meta name="author" content="Asif Gondal" />
+<meta name="robots" content="index, follow" />
+<link rel="canonical" href="https://asef0gondal.github.io/floatpad/" />
+<link rel="icon" type="image/png" href="assets/icon.png" />
+
+<!-- Open Graph -->
+<meta property="og:type" content="website" />
+<meta property="og:site_name" content="FloatPad" />
+<meta property="og:title" content="FloatPad — Floating Reference Board &amp; Moodboard" />
+<meta property="og:description" content="Free, open-source PureRef / ScreenFloat alternative in Rust + Tauri. Always-on-top images, OCR, screenshots, GIFs, video, web &amp; notes. macOS, Windows, Linux." />
+<meta property="og:url" content="https://asef0gondal.github.io/floatpad/" />
+<meta property="og:image" content="https://asef0gondal.github.io/floatpad/assets/icon.png" />
+
+<!-- Twitter -->
+<meta name="twitter:card" content="summary" />
+<meta name="twitter:title" content="FloatPad — Floating Reference Board &amp; Moodboard" />
+<meta name="twitter:description" content="Open-source PureRef / ScreenFloat alternative. Always-on-top reference images, OCR, screenshots, video, web &amp; notes. macOS, Windows, Linux." />
+<meta name="twitter:image" content="https://asef0gondal.github.io/floatpad/assets/icon.png" />
+
+<!-- Structured data: SoftwareApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "FloatPad",
+  "description": "Free, open-source floating reference board and moodboard. A PureRef and ScreenFloat alternative built in Rust + Tauri with always-on-top images, OCR, region screenshots, GIFs, a video player, a web browser and markdown notes.",
+  "applicationCategory": "DesignApplication",
+  "operatingSystem": "macOS, Windows, Linux",
+  "softwareVersion": "2.9.8",
+  "url": "https://asef0gondal.github.io/floatpad/",
+  "downloadUrl": "https://github.com/Asef0Gondal/floatpad/releases/latest",
+  "installUrl": "https://github.com/Asef0Gondal/floatpad/releases/latest",
+  "license": "https://opensource.org/licenses/MIT",
+  "author": { "@type": "Person", "name": "Asif Gondal" },
+  "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+  "featureList": "Reference image board, moodboard, always-on-top overlay, OCR, region screenshots, GIF playback, video player with A-B loop, web browser with ad blocking, markdown and screenplay notes, undo/redo, shot library, crop"
+}
+</script>
+
+<style>
+  :root{
+    --bg:#0e0e10; --surface:#16161a; --raised:#1c1c22; --border:#2a2a32;
+    --text:#e8e8ea; --dim:#a0a0a8; --faint:#6a6a72; --accent:#4a90e2; --accent-dim:#1c2c40;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  body{background:var(--bg);color:var(--text);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:var(--accent);text-decoration:none}
+  a:hover{text-decoration:underline}
+  .wrap{max-width:920px;margin:0 auto;padding:0 22px}
+  header{padding:64px 0 40px;text-align:center}
+  .logo{width:96px;height:96px;border-radius:22px;box-shadow:0 12px 40px rgba(0,0,0,.5)}
+  h1{font-size:44px;letter-spacing:-.02em;margin:20px 0 8px}
+  .tag{font-size:19px;color:var(--dim);max-width:640px;margin:0 auto}
+  .tag strong{color:var(--text)}
+  .cta{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin:30px 0 6px}
+  .btn{display:inline-flex;align-items:center;gap:8px;background:var(--accent);color:#fff;font-weight:600;padding:12px 22px;border-radius:10px;font-size:15px}
+  .btn:hover{text-decoration:none;filter:brightness(1.1)}
+  .btn.ghost{background:var(--raised);color:var(--text);border:1px solid var(--border)}
+  .platforms{color:var(--faint);font-size:13px;margin-top:14px}
+  section{padding:34px 0;border-top:1px solid var(--border)}
+  h2{font-size:26px;letter-spacing:-.01em;margin-bottom:16px}
+  p.lead{color:var(--dim);font-size:17px}
+  .grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:14px;margin-top:8px}
+  .card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+  .card h3{font-size:16px;margin-bottom:6px}
+  .card p{color:var(--dim);font-size:14px}
+  table{width:100%;border-collapse:collapse;margin-top:8px;font-size:14px}
+  th,td{text-align:left;padding:9px 12px;border-bottom:1px solid var(--border)}
+  th{color:var(--faint);font-weight:600;font-size:12px;text-transform:uppercase;letter-spacing:.04em}
+  td.yes{color:#5fc77a}
+  td.no{color:var(--faint)}
+  .note{color:var(--faint);font-size:13px;margin-top:12px}
+  footer{padding:40px 0 60px;text-align:center;color:var(--faint);font-size:14px;border-top:1px solid var(--border)}
+  .pill{display:inline-block;background:var(--accent-dim);color:var(--accent);border-radius:20px;padding:3px 12px;font-size:12px;font-weight:600;margin-bottom:14px}
+</style>
+</head>
+<body>
+<header class="wrap">
+  <img class="logo" src="assets/icon.png" alt="FloatPad app icon" width="96" height="96" />
+  <h1>FloatPad</h1>
+  <p class="tag">A floating <strong>reference board &amp; moodboard</strong> that stays always-on-top. The open-source <strong>PureRef / ScreenFloat alternative</strong> for macOS, Windows &amp; Linux.</p>
+  <div class="cta">
+    <a class="btn" href="https://github.com/Asef0Gondal/floatpad/releases/latest">⬇ Download free</a>
+    <a class="btn ghost" href="https://github.com/Asef0Gondal/floatpad">View on GitHub</a>
+  </div>
+  <div class="platforms">macOS (.dmg) · Windows (.exe) · Linux (.deb / AppImage) · ~10 MB · MIT licensed · no telemetry</div>
+</header>
+
+<section class="wrap">
+  <span class="pill">What is FloatPad?</span>
+  <p class="lead">FloatPad keeps your reference material <strong>on top of everything else</strong> — a frameless overlay that stays above your work, drops to 15% opacity, and can become click-through so it never blocks the app underneath. Instead of alt-tabbing to Finder, YouTube, browser tabs and design files, everything lives in one floating pad: an infinite image board, a video player, a real web browser and a writing pad.</p>
+  <p class="lead" style="margin-top:12px">Built with <strong>Rust</strong> and <strong>Tauri</strong> (a native core, not Electron), it is fast, tiny and private. It runs entirely on your machine with no account, no analytics and no telemetry.</p>
+</section>
+
+<section class="wrap">
+  <h2>Four modes, one overlay</h2>
+  <div class="grid">
+    <div class="card"><h3>🖼 Board</h3><p>Infinite canvas for images, annotations, sticky notes and screenshots. Zoom/pan, arrange, crop, flip, grayscale, OCR, undo/redo, and a persistent shot library.</p></div>
+    <div class="card"><h3>🎬 Video</h3><p>Local files with A-B loop, frame-by-frame stepping, variable speed and grab-frame-to-board. Picture-in-Picture support.</p></div>
+    <div class="card"><h3>🌐 Web</h3><p>A real browser with bookmarks, reader mode, history and network-level ad &amp; tracker blocking. Send any image straight to the board.</p></div>
+    <div class="card"><h3>✍️ Write</h3><p>Screenplay-format or Markdown writing pad with live preview, a .md folder workflow, autosave and a focus timer.</p></div>
+    <div class="card"><h3>🔍 OCR &amp; screenshots</h3><p>Extract text from any image (macOS Vision) and capture any screen region straight onto the board.</p></div>
+    <div class="card"><h3>📌 Always on top</h3><p>Visible on every Space, opacity down to 15%, click-through detach, mini mode, borderless view and standalone panels.</p></div>
+  </div>
+</section>
+
+<section class="wrap">
+  <h2>How FloatPad compares</h2>
+  <p class="lead">Looking for a <strong>PureRef alternative</strong>, <strong>ScreenFloat alternative</strong> or <strong>BeeRef alternative</strong>? FloatPad is the all-in-one option — a reference board plus video, web and notes, with OCR and screenshots, in one native open-source app.</p>
+  <table>
+    <thead><tr><th>Feature</th><th>FloatPad</th><th>PureRef</th><th>ScreenFloat</th><th>BeeRef</th></tr></thead>
+    <tbody>
+      <tr><td>Open source (MIT)</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="yes">Yes</td></tr>
+      <tr><td>macOS / Windows / Linux</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="no">macOS only</td><td class="yes">Yes</td></tr>
+      <tr><td>Reference image board</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td><td class="yes">Yes</td></tr>
+      <tr><td>OCR (image → text)</td><td class="yes">Yes</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
+      <tr><td>Region screenshots</td><td class="yes">Yes</td><td class="no">No</td><td class="yes">Yes</td><td class="no">No</td></tr>
+      <tr><td>Video player + A-B loop</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td>Web browser + ad block</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td>Markdown / screenplay notes</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+      <tr><td>Native Rust core (~10 MB)</td><td class="yes">Yes</td><td class="no">No</td><td class="no">No</td><td class="no">No</td></tr>
+    </tbody>
+  </table>
+  <p class="note">Competitor features reflect their public docs at the time of writing; corrections welcome.</p>
+</section>
+
+<section class="wrap">
+  <h2>Get FloatPad</h2>
+  <p class="lead">Free and open source under the MIT license. Download the latest build for your platform, or build from source with Node.js and Rust.</p>
+  <div class="cta" style="justify-content:flex-start">
+    <a class="btn" href="https://github.com/Asef0Gondal/floatpad/releases/latest">⬇ Download latest release</a>
+    <a class="btn ghost" href="https://github.com/Asef0Gondal/floatpad#build--package">Build from source</a>
+  </div>
+</section>
+
+<footer class="wrap">
+  <p><a href="https://github.com/Asef0Gondal/floatpad">FloatPad on GitHub</a> · MIT © 2026 Asif Gondal · A personal project that exists because I needed it.</p>
+</footer>
+</body>
+</html>

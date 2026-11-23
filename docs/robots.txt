@@ -1,0 +1,4 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://asef0gondal.github.io/floatpad/sitemap.xml
