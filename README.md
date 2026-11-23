@@ -12,6 +12,7 @@
 
 <p align="center">
   <a href="https://github.com/Asef0Gondal/floatpad/releases/latest"><img alt="Download" src="https://img.shields.io/github/v/release/Asef0Gondal/floatpad?label=download&logo=github&color=4a90e2"></a>
+  <a href="https://asef0gondal.github.io/floatpad/"><img alt="Website" src="https://img.shields.io/badge/website-floatpad-4a90e2?logo=googlechrome&logoColor=white"></a>
   <a href="https://github.com/Asef0Gondal/floatpad"><img alt="GitHub" src="https://img.shields.io/badge/GitHub-Asef0Gondal%2Ffloatpad-181717?logo=github&logoColor=white"></a>
   <img alt="Rust" src="https://img.shields.io/badge/Rust-stable-DEA584?logo=rust&logoColor=black">
   <img alt="Tauri" src="https://img.shields.io/badge/Tauri-2-FFC131?logo=tauri&logoColor=black">
