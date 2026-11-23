@@ -1,4 +1,4 @@
-import React, { useEffect, useLayoutEffect, useRef, useState, useCallback } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState, useCallback } from 'react';
 import { listen } from '@tauri-apps/api/event';
 import {
   IconCamera,
@@ -1586,7 +1586,7 @@ export default function ImageBoard({ active }) {
     };
   })() : null;
 
-  const sortedImages = [...images].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
+  const sortedImages = useMemo(() => [...images].sort((a, b) => (a.z ?? 0) - (b.z ?? 0)), [images]);
   const visibleAnnotationCount = annotations.length + (draftAnnotation ? 1 : 0);
 
   const renderShapeAnnotation = annotation => {

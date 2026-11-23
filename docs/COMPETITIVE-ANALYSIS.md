@@ -78,11 +78,11 @@ text-only. Our adblock, screenplay mode, A-B loop and potato mode are unique.
 11. ✅ GIF playback: Rust image-crate decode (composited frames + delays), play/pause, timeline scrub, frame step, speed, frame→board.
 12. ✅ URL paste → scrape all page images onto board (PureRef) — hidden webview + eval channel.
 13. ✅ Pixel-art sampling (⌥T, export-safe); image comments (💬 badge); replace image (⇄, keeps geometry).
-14. ❌ Shot library: tags + search over saved boards/captures (ScreenFloat-lite).
+14. ✅ Shot library: persistent shots with thumbnails, name/tag search, rename/retag, reopen, delete (v2.3.0).
 
 ### Tier 3 — architectural, later
 15. Groups + hierarchy panel (PureRef 2.0).
-16. Non-destructive crop tool with pan/zoom inside crop.
+16. ✅ Crop tool (undoable crop-box dialog, v2.4.0). Full pan/zoom-inside-crop gizmo remains a future refinement.
 17. Image management: downscale/optimize/embed-vs-link (PureRef manage images).
 18. Screen recording (ScreenFloat) — heavy; evaluate against product focus.
 19. Cross-device sync (Tot/ScreenFloat iCloud) — needs backend decision.

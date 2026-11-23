@@ -1448,3 +1448,4 @@ button:focus:not(:focus-visible) { outline: none; }
 .crop-btn:hover { color: var(--fp-text); background: var(--fp-bg-active); }
 .crop-btn.primary { background: var(--fp-accent); border-color: var(--fp-accent); color: #fff; }
 .crop-btn.primary:hover { filter: brightness(1.1); }
+.shot-thumb-empty { display: flex; align-items: center; justify-content: center; font-size: 28px; color: var(--fp-text-faint); cursor: pointer; }

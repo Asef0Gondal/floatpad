@@ -218,6 +218,26 @@ shots_clear.
 - Clear-data actions confirm via the dialog plugin (WKWebView has no native
   confirm) and run off-thread in Rust.
 
+## v2.5.0 — Loop 4: quality capstone
+
+**Changed:** IPC contract test now scans src/components too (covers the Shot
+Library / Settings channels, +7 checks → 108 tests). Memoized the board's
+sortedImages (useMemo) so selection/note edits don't re-sort the image list.
+Fixed SVG shot thumbnails: raster formats get a PNG thumb; SVG/unsupported leave
+no thumb and the library shows a placeholder (previously a wrong-format copy
+rendered broken).
+
+**Learned:**
+- Contract tests must scan EVERY directory that calls the IPC shim, not just
+  modes — new components silently bypassed the guard until added.
+- Thumbnail fallbacks must respect format: copying an SVG into a `.png` thumb
+  and serving it as image/png renders broken. Prefer an honest placeholder.
+
+**Maturity state (2.5.0):** four modes + undo/redo, persistent shot library,
+crop, settings, accessibility focus rings, file-based autosave, network ad
+blocking (macOS), OCR, GIF playback, URL scraping. 108 frontend tests, 4 Rust
+tests, 30-assertion hidden end-to-end self-test, CI on macOS/Windows/Linux.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

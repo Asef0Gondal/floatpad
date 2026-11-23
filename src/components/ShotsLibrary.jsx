@@ -76,7 +76,9 @@ export default function ShotsLibrary({ onClose }) {
         )}
         {filtered.map(s => (
           <div key={s.id} className="shot-card">
-            <img className="shot-thumb" src={s.thumb} alt={s.name} onClick={() => float(s)} title="Click to float" />
+            {s.thumb
+              ? <img className="shot-thumb" src={s.thumb} alt={s.name} onClick={() => float(s)} title="Click to float" />
+              : <div className="shot-thumb shot-thumb-empty" onClick={() => float(s)} title="Click to float">🖼</div>}
             <div className="shot-name" title={s.name}>{s.name}</div>
             {(s.tags || []).length > 0 && <div className="shot-tags">{s.tags.join(' · ')}</div>}
             <div className="shot-actions">

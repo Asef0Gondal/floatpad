@@ -88,12 +88,9 @@ pub fn save(app: &AppHandle, data_url: &str, name: &str, tags: Vec<String>) -> R
 
     // Thumbnail (best-effort; SVG/unsupported formats fall back to the original).
     let thumb_path = dir.join(format!("{id}_thumb.png"));
-    let thumb_ok = image::open(&img_path)
-        .map(|img| img.thumbnail(160, 160).save(&thumb_path))
-        .is_ok();
-    if !thumb_ok {
-        let _ = std::fs::copy(&img_path, &thumb_path);
-    }
+    // Raster formats get a PNG thumbnail; SVG/unsupported leave no thumb
+    // (the library shows a placeholder) rather than a wrong-format copy.
+    let _ = image::open(&img_path).map(|img| img.thumbnail(160, 160).save(&thumb_path));
 
     let meta = ShotMeta {
         id,

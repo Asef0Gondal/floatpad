@@ -61,7 +61,11 @@ describe('channel → command mapping', () => {
 });
 
 describe('contract: every IPC channel used by the UI is handled by the shim', () => {
-  const files = ['src/App.jsx', ...readdirSync('src/modes').filter((f) => f.endsWith('.jsx')).map((f) => 'src/modes/' + f)];
+  const files = [
+    'src/App.jsx',
+    ...readdirSync('src/modes').filter((f) => f.endsWith('.jsx')).map((f) => 'src/modes/' + f),
+    ...readdirSync('src/components').filter((f) => f.endsWith('.jsx')).map((f) => 'src/components/' + f),
+  ];
   const used = new Map();
   for (const f of files) {
     const s = readFileSync(f, 'utf8');
