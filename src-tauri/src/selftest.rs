@@ -1,7 +1,7 @@
 // Hidden end-to-end check of the Rust plumbing (FP_SELFTEST=1).
 // The main window stays hidden; every step logs PASS/FAIL and the app exits.
 use crate::{commands, platform};
-use serde_json::Value;
+use serde_json::{json, Value};
 use tauri::{AppHandle, Listener, Manager};
 
 macro_rules! check {
@@ -95,6 +95,8 @@ pub async fn run(app: AppHandle) {
         tiny_png.into(),
         100.0,
         100.0,
+        String::new(),
+        false,
     ).await;
     check!(label.is_ok(), "shot_open");
     if let Ok(l) = label {
@@ -191,6 +193,27 @@ pub async fn run(app: AppHandle) {
     // 11. board autosave command responds (read-only — never clobbers the real board)
     let _ = commands::load_autosave_board(app.clone()).await;
     log::info!("SELFTEST PASS: board autosave read command");
+
+    // 12. Shot Library round-trip (save → list → load → update → delete; cleans up)
+    {
+        let tiny = "data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==";
+        match crate::shots::shot_save(app.clone(), tiny.into(), "selftest-shot".into(), vec!["test".into()]).await {
+            Ok(meta) => {
+                let id = meta["id"].as_str().unwrap_or("").to_string();
+                let listed = crate::shots::shots_list(app.clone()).await.unwrap_or(Value::Array(vec![]));
+                let found = listed.as_array().map(|a| a.iter().any(|s| s["id"] == json!(id))).unwrap_or(false);
+                check!(found, "shot_save + shots_list");
+                let loaded = crate::shots::shot_load(app.clone(), id.clone()).await;
+                check!(loaded.as_deref() == Some(tiny), "shot_load round-trip");
+                let _ = crate::shots::shot_update(app.clone(), id.clone(), "renamed".into(), vec!["x".into()]).await;
+                let _ = crate::shots::shot_delete(app.clone(), id.clone()).await;
+                let after = crate::shots::shots_list(app.clone()).await.unwrap_or(Value::Array(vec![]));
+                let gone = after.as_array().map(|a| !a.iter().any(|s| s["id"] == json!(id))).unwrap_or(false);
+                check!(gone, "shot_update + shot_delete cleanup");
+            }
+            Err(e) => log::error!("SELFTEST FAIL: shot_save: {e}"),
+        }
+    }
 
     log::info!("SELFTEST: done");
     app.exit(0);

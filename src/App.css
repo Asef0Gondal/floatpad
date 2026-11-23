@@ -1315,3 +1315,57 @@ kbd {
   .mode-toolbar .tb-tool { padding: 0 4px; font-size: 10px; gap: 3px; }
   .write-mode-btn { padding: 0 6px; font-size: 10px; }
 }
+
+/* ── Shot Library dialog ── */
+.shots-dialog {
+  padding: 0; margin: auto; color: var(--fp-text);
+  background: var(--fp-bg-raised); border: 1px solid var(--fp-border-mid);
+  border-radius: 14px; width: 640px; max-width: 92vw; max-height: 82vh;
+  display: flex; flex-direction: column; overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,.6);
+}
+.shots-dialog::backdrop { background: rgba(0,0,0,.65); }
+.shots-head {
+  display: flex; align-items: center; gap: 10px;
+  padding: 12px 16px; border-bottom: 1px solid var(--fp-border); flex-shrink: 0;
+}
+.shots-title { font-weight: 600; font-size: 13px; white-space: nowrap; }
+.shots-search {
+  flex: 1; background: var(--fp-bg); border: 1px solid var(--fp-border-mid);
+  border-radius: 7px; color: var(--fp-text); padding: 6px 10px; font-size: 12px; outline: none;
+}
+.shots-search:focus { border-color: var(--fp-accent); }
+.shots-close { background: none; border: none; color: var(--fp-text-faint); cursor: pointer; font-size: 13px; }
+.shots-close:hover { color: var(--fp-danger); }
+.shots-grid {
+  overflow-y: auto; padding: 14px 16px;
+  display: grid; grid-template-columns: repeat(auto-fill, minmax(150px, 1fr)); gap: 12px;
+}
+.shots-empty { grid-column: 1 / -1; color: var(--fp-text-faint); font-size: 12px; padding: 24px; text-align: center; }
+.shot-card {
+  background: var(--fp-bg); border: 1px solid var(--fp-border);
+  border-radius: 9px; padding: 8px; display: flex; flex-direction: column; gap: 5px;
+}
+.shot-thumb {
+  width: 100%; height: 96px; object-fit: contain; background: var(--fp-board-bg);
+  border-radius: 6px; cursor: pointer;
+}
+.shot-name { font-size: 11px; color: var(--fp-text); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot-tags { font-size: 10px; color: var(--fp-text-faint); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.shot-actions { display: flex; gap: 4px; }
+.shot-actions button {
+  flex: 1; background: var(--fp-bg-hover); border: 1px solid var(--fp-border);
+  color: var(--fp-text-dim); border-radius: 5px; font-size: 10px; padding: 3px 0; cursor: pointer;
+}
+.shot-actions button:hover { color: var(--fp-text); background: var(--fp-bg-active); }
+.shot-edit {
+  display: flex; gap: 6px; padding: 10px 16px; border-top: 1px solid var(--fp-border); flex-shrink: 0;
+}
+.shot-edit input {
+  flex: 1; background: var(--fp-bg); border: 1px solid var(--fp-border-mid);
+  border-radius: 6px; color: var(--fp-text); padding: 5px 8px; font-size: 12px; outline: none;
+}
+.shot-edit button {
+  background: var(--fp-accent-dim); border: 1px solid var(--fp-border-mid);
+  color: var(--fp-accent-text); border-radius: 6px; font-size: 11px; padding: 5px 10px; cursor: pointer;
+}

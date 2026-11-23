@@ -66,6 +66,11 @@
     "allow-gif-frames",
     "allow-autosave-board",
     "allow-load-autosave-board",
-    "opener:default"
+    "opener:default",
+    "allow-shot-save",
+    "allow-shots-list",
+    "allow-shot-load",
+    "allow-shot-delete",
+    "allow-shot-update"
   ]
 }

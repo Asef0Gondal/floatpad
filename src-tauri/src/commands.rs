@@ -566,6 +566,8 @@ pub async fn shot_open(
     data_url: String,
     w: f64,
     h: f64,
+    name: String,
+    persist: bool,
 ) -> Result<String, String> {
     let n = SHOT_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
     let label = format!("shot-{n}");
@@ -573,7 +575,7 @@ pub async fn shot_open(
     let scale = (480.0 / w.max(1.0)).min(360.0 / h.max(1.0)).min(1.0);
     let ww = (w * scale).max(160.0);
     let hh = (h * scale).max(120.0);
-    payloads.0.lock().unwrap().insert(label.clone(), data_url);
+    payloads.0.lock().unwrap().insert(label.clone(), data_url.clone());
 
     let mut builder = WebviewWindowBuilder::new(&app, &label, WebviewUrl::App("index.html?shot=1".into()))
         .title("FloatPad Shot")
@@ -593,6 +595,14 @@ pub async fn shot_open(
         }
     };
     platform::decorate(&win.as_ref().window());
+
+    // Persist to the Shot Library (best-effort) so floated images survive restart.
+    // Reopening from the library passes persist=false to avoid duplicates.
+    if persist {
+        let app3 = app.clone();
+        let url3 = data_url.clone();
+        let _ = tauri::async_runtime::spawn_blocking(move || crate::shots::save(&app3, &url3, &name, Vec::new()));
+    }
 
     // Drop the payload if the window closes before (or without) fetching it,
     // so fast-closed or failed shots don't leak whole images into the map.

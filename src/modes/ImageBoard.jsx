@@ -20,6 +20,7 @@ import {
 import { ipcRenderer } from '../ipc';
 import { evalInWebview } from '../utils/tauriWebview';
 import ScrollToolbar from '../components/ScrollToolbar';
+import ShotsLibrary from '../components/ShotsLibrary';
 import {
   createHistory, pushHistory, undoHistory, redoHistory, currentSnapshot,
   canUndo as histCanUndo, canRedo as histCanRedo,
@@ -384,6 +385,7 @@ export default function ImageBoard({ active }) {
   const [showArrange, setShowArrange] = useState(false);
   const [ocr, setOcr] = useState(null);
   const [scrapeBusy, setScrapeBusy] = useState(false);
+  const [showShots, setShowShots] = useState(false);
   const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
   const [commentEdit, setCommentEdit] = useState(null); // {id, text}
   const [boardReady, setBoardReady] = useState(!isMainBoard);
@@ -1921,6 +1923,10 @@ export default function ImageBoard({ active }) {
           Load
         </button>
 
+        <button className="tb-tool" onClick={() => setShowShots(true)} title="Open the Shot Library">
+          ⧉ Shots
+        </button>
+
         <button className="tb-tool" onClick={clearBoard} title="Clear board">
           <IconTrash size={13}/>
           Clear
@@ -2116,7 +2122,7 @@ export default function ImageBoard({ active }) {
                       className="bia-btn"
                       onClick={e => {
                         e.stopPropagation();
-                        ipcRenderer.invoke('shot-open', img.src, img.origW || img.w, img.origH || img.h);
+                        ipcRenderer.invoke('shot-open', img.src, img.origW || img.w, img.origH || img.h, img.source ? img.source.split('/').pop() : 'Board image', true);
                       }}
                       title="Float as its own window (shot)"
                     >
@@ -2264,6 +2270,8 @@ export default function ImageBoard({ active }) {
             <button className="focus-btn" onClick={() => setGif(null)} title="Close GIF controls">✕</button>
           </div>
         )}
+
+        {showShots && <ShotsLibrary onClose={() => setShowShots(false)} />}
 
         {ocr && (
           <div className="ocr-panel">

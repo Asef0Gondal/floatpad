@@ -183,6 +183,23 @@ toolbar buttons. Built as a pure `boardHistory.js` module (create/push/undo/redo
 - Fixed a real leak: `shot_open` inserted the image payload BEFORE building the
   window; a build failure left it in the map forever. Now removed on failure.
 
+## v2.3.0 — Loop 2: persistent Shot Library
+
+**Changed:** floated images now persist to `<app-data>/shots/` (image + 160px
+thumbnail + index.json with name/tags/created). New Rust store (shots.rs):
+shot_save / shots_list / shot_load / shot_delete / shot_update. A `<dialog>`
+library UI (grid + search + tag edit + reopen + delete) opened via ⧉ Shots.
+Floating auto-saves; reopening from the library passes persist=false.
+
+**Learned:**
+- Auto-save-on-float + reopen-from-library would create DUPLICATES unless the
+  reopen path opts out → added a `persist` flag to shot_open.
+- The self-test shot round-trip must DELETE its test shot (and shot_open uses
+  persist=false) so it never pollutes the user's real library.
+- Thumbnails generated once at save (image crate `thumbnail`) keep the library
+  grid fast; SVG/unsupported formats fall back to copying the original.
+- Verified end-to-end in the hidden self-test: save→list→load→update→delete.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

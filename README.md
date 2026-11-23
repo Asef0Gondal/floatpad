@@ -59,6 +59,8 @@ Built for video editors, designers and developers who need a second screen that 
 - **Per-image powers**: flip, rotate, grayscale (`⌥G`), opacity, lock, duplicate (`⌘D`), reset, open source
 - **OCR any image** (`T`): extracted text with one-click copy, plus detected links, emails and phone numbers (macOS Vision)
 - **Float any image as a shot** (`⧉`): its own frameless always-on-top mini window
+- **Shot Library**: floated images are saved to disk with thumbnails; browse, search by name/tag, rename, retag, reopen or delete them (⧉ Shots button)
+- **Undo / redo** (`⌘Z` / `⌘⇧Z`, toolbar ↶ ↷) across images, notes and annotations
 
 ### Video
 

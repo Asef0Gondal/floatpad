@@ -104,7 +104,12 @@ const JS_INVOKE = {
 // invoke() channels served by Rust
 const RUST_INVOKE = {
   'ocr-image': ['ocr_image', (dataUrl) => ({ dataUrl })],
-  'shot-open': ['shot_open', (dataUrl, w, h) => ({ dataUrl, w, h })],
+  'shot-open': ['shot_open', (dataUrl, w, h, name, persist) => ({ dataUrl, w, h, name: name || '', persist: persist !== false })],
+  'shot-save': ['shot_save', (dataUrl, name, tags) => ({ dataUrl, name, tags })],
+  'shots-list': ['shots_list', () => ({})],
+  'shot-load': ['shot_load', (id) => ({ id })],
+  'shot-delete': ['shot_delete', (id) => ({ id })],
+  'shot-update': ['shot_update', (id, name, tags) => ({ id, name, tags })],
   'shot-payload': ['shot_payload', () => ({})],
   'web-create': ['web_create', (label, url) => ({ window: getCurrentWindow().label, label, url, x: 0, y: 0, w: 1, h: 1 })],
   'web-destroy': ['web_destroy', (label) => ({ label })],

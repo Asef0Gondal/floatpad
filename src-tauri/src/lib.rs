@@ -3,6 +3,7 @@ mod commands;
 mod ocr;
 mod platform;
 mod selftest;
+mod shots;
 
 use commands::MiniState;
 use serde_json::{Map, Value};
@@ -255,6 +256,11 @@ pub fn run() {
             commands::shot_open,
             commands::shot_payload,
             commands::gif_frames,
+            shots::shot_save,
+            shots::shots_list,
+            shots::shot_load,
+            shots::shot_delete,
+            shots::shot_update,
             commands::autosave_board,
             commands::load_autosave_board,
         ])
