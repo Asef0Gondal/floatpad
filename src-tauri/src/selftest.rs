@@ -122,15 +122,32 @@ pub async fn run(app: AppHandle) {
     ).await;
     check!(created.is_ok(), "web_create ({created:?})");
     if created.is_ok() {
-        let script = r#"(async () => { try { const r = await eval("document.title"); window.__TAURI_INTERNALS__.invoke('web_eval_result', { id: 1, result: JSON.stringify(r === undefined ? null : r) }); } catch (e) { try { window.__TAURI_INTERNALS__.invoke('web_eval_result', { id: 1, error: String((e && e.message) || e) }); } catch {} } })();"#;
-        commands::web_eval(app.clone(), "web-selftest".into(), script.into()).await;
-        match rx.recv_timeout(std::time::Duration::from_secs(20)) {
-            Ok(v) => {
-                let title = v.get("result").and_then(|r| r.as_str()).unwrap_or("");
-                check!(title.contains("Example"), "remote eval round-trip (title={title}, err={})", v.get("error").and_then(|e| e.as_str()).unwrap_or("none"));
+        // Retry with unique ids: the page may still be loading (eval before
+        // load returns an empty title) or the network may be slow. Drain stale
+        // results and wait for each attempt's own id.
+        let mut title_ok = false;
+        for attempt in 0..8u64 {
+            let id = 100 + attempt;
+            let script = format!(r#"(async () => {{ try {{ const r = await eval("document.title"); window.__TAURI_INTERNALS__.invoke('web_eval_result', {{ id: {id}, result: JSON.stringify(r === undefined ? null : r) }}); }} catch (e) {{ try {{ window.__TAURI_INTERNALS__.invoke('web_eval_result', {{ id: {id}, error: String((e && e.message) || e) }}); }} catch {{}} }} }})();"#);
+            commands::web_eval(app.clone(), "web-selftest".into(), script).await;
+            let deadline = std::time::Instant::now() + std::time::Duration::from_secs(4);
+            loop {
+                let remaining = deadline.saturating_duration_since(std::time::Instant::now());
+                if remaining.is_zero() { break; }
+                match rx.recv_timeout(remaining) {
+                    Ok(v) => {
+                        if v.get("id").and_then(|x| x.as_u64()) == Some(id) {
+                            let title = v.get("result").and_then(|r| r.as_str()).unwrap_or("");
+                            if title.contains("Example") { title_ok = true; }
+                            break;
+                        }
+                    }
+                    Err(_) => break,
+                }
             }
-            Err(_) => log::error!("SELFTEST FAIL: remote eval round-trip timed out (capability chain?)"),
+            if title_ok { break; }
         }
+        check!(title_ok, "remote eval round-trip (retried for slow load/network)");
         commands::web_destroy(app.clone(), "web-selftest".into()).await;
         let a = app.clone();
         check!(wait_for(move || a.get_webview("web-selftest").is_none(), 3000).await, "web_destroy");

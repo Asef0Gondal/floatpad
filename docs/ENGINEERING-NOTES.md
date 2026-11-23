@@ -389,6 +389,17 @@ component structure or the absolutely-positioned overlays.
 EVERY restore path, and handshake replies must wait until local state is loaded
 — otherwise "empty" propagates and destroys the peer's data.
 
+## v2.9.4 — self-test reliability (network-flaky eval check)
+
+**Changed:** the hidden self-test's remote-eval round-trip (loads example.com,
+evals document.title) was network-flaky — a slow load or eval-before-page-load
+produced a false FAIL. Replaced the single 20s wait with a unique-id retry loop
+(8 attempts, 4s each, draining stale results) so it waits for the page to load.
+
+**Learned:** an end-to-end check that depends on external network must retry /
+wait for readiness, or it cries wolf and erodes trust in the whole self-test.
+A false FAIL here cost an investigation cycle; the retry removes that noise.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
