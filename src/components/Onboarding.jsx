@@ -41,7 +41,7 @@ export default function Onboarding({ onDone }) {
   }, []);
 
   return (
-    <dialog ref={ref} className="onboarding-card">
+    <dialog ref={ref} className="onboarding-card" aria-label="Welcome to FloatPad">
 
         <div className="ob-progress">
           {STEPS.map((_, i) => (

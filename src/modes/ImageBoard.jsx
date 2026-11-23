@@ -12,7 +12,7 @@ import {
   IconSave,
   IconTrash,
 } from '../components/Icons';
-import { loadImageDimensions, scaleToFit, fileToDataUrl, uid, ensureUidAbove, normalizeImageModel } from '../utils/helpers';
+import { loadImageDimensions, scaleToFit, fileToDataUrl, uid, ensureUidAbove, normalizeImageModel, detectContacts } from '../utils/helpers';
 import {
   alignImages, distributeImages, normalizeImages, stackImages, packImages, duplicateImages,
 } from '../utils/boardArrange';
@@ -1261,13 +1261,7 @@ export default function ImageBoard({ active }) {
     try {
       const res = await ipcRenderer.invoke('ocr-image', img.src);
       const text = res?.text || '';
-      const uniq = a => [...new Set(a)];
-      const links = uniq(text.match(/https?:\/\/[^\s<>"')\]]+/g) || []);
-      const emails = uniq(text.match(/[\w.+-]+@[\w-]+\.[\w.]+/g) || []);
-      const phones = uniq(text.match(/\+?\d[\d\s().-]{7,}\d/g) || [])
-        .map(p => p.trim())
-        .filter(p => p.replace(/\D/g, '').length >= 8);
-      setOcr({ text, links, emails, phones });
+      setOcr({ text, ...detectContacts(text) });
     } catch (e) {
       setOcr({ error: String(e?.message || e) });
     }

@@ -56,7 +56,7 @@ export default function ShotsLibrary({ onClose }) {
   );
 
   return (
-    <dialog ref={ref} className="shots-dialog" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
+    <dialog ref={ref} className="shots-dialog" aria-label="Shot Library" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
       <div className="shots-head">
         <span className="shots-title">Shot Library</span>
         <input
@@ -77,7 +77,7 @@ export default function ShotsLibrary({ onClose }) {
         {filtered.map(s => (
           <div key={s.id} className="shot-card">
             {s.thumb
-              ? <img className="shot-thumb" src={s.thumb} alt={s.name} onClick={() => float(s)} title="Click to float" />
+              ? <img className="shot-thumb" src={s.thumb} alt={s.name} loading="lazy" onClick={() => float(s)} title="Click to float" />
               : <div className="shot-thumb shot-thumb-empty" onClick={() => float(s)} title="Click to float">🖼</div>}
             <div className="shot-name" title={s.name}>{s.name}</div>
             {(s.tags || []).length > 0 && <div className="shot-tags">{s.tags.join(' · ')}</div>}

@@ -101,3 +101,15 @@ export function normalizeImageModel(image, index = 0) {
     comment: image.comment ?? '',
   };
 }
+
+// Detect links / emails / phone numbers in OCR text (pure, unit-tested).
+export function detectContacts(text) {
+  const uniq = a => [...new Set(a)];
+  const t = String(text || '');
+  const links = uniq(t.match(/https?:\/\/[^\s<>"')\]]+/g) || []);
+  const emails = uniq((t.match(/[\w.+-]+@[\w-]+\.[\w.]+/g) || []).map(e => e.replace(/[.,;:]+$/, '')));
+  const phones = uniq(t.match(/\+?\d[\d\s().-]{7,}\d/g) || [])
+    .map(p => p.trim())
+    .filter(p => p.replace(/\D/g, '').length >= 8);
+  return { links, emails, phones };
+}

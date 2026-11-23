@@ -33,7 +33,7 @@ export default function Settings({ theme, onToggleTheme, borderless, onToggleBor
   };
 
   return (
-    <dialog ref={ref} className="settings-dialog" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
+    <dialog ref={ref} className="settings-dialog" aria-label="Settings" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
       <div className="settings-head">
         <span>Settings</span>
         <button className="settings-close" onClick={onClose} title="Close">✕</button>

@@ -112,3 +112,23 @@ describe('board autosave round-trip (audit #2/#5)', () => {
     expect(r.source).toBeNull();
   });
 });
+
+describe('detectContacts (OCR data detection)', () => {
+  it('finds links, emails, phones and dedupes', async () => {
+    const { detectContacts } = await import('../src/utils/helpers');
+    const text = 'Visit https://x.com/a and https://x.com/a again. Mail a@b.co or a@b.co. Call +1 (555) 123-4567 or 5551234567.';
+    const { links, emails, phones } = detectContacts(text);
+    expect(links).toEqual(['https://x.com/a']);
+    expect(emails).toEqual(['a@b.co']);
+    expect(phones.length).toBeGreaterThanOrEqual(1);
+  });
+  it('ignores short digit runs (not phones)', async () => {
+    const { detectContacts } = await import('../src/utils/helpers');
+    expect(detectContacts('order 12345 id 67890').phones).toEqual([]);
+  });
+  it('handles empty / null safely', async () => {
+    const { detectContacts } = await import('../src/utils/helpers');
+    expect(detectContacts('')).toEqual({ links: [], emails: [], phones: [] });
+    expect(detectContacts(null)).toEqual({ links: [], emails: [], phones: [] });
+  });
+});

@@ -78,7 +78,7 @@ export default function CropDialog({ img, onApply, onClose }) {
   };
 
   return (
-    <dialog ref={ref} className="crop-dialog">
+    <dialog ref={ref} className="crop-dialog" aria-label="Crop image">
       <div className="crop-head">
         <span>Crop image</span>
         <span className="crop-dims">{crop.w} × {crop.h}</span>

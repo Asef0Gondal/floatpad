@@ -325,6 +325,29 @@ verified for single-window non-regression (33/33 self-test) + build, but the
 two-window interaction itself can't be exercised by the headless self-test — it
 needs a hands-on check (undock Board, edit in both, confirm sync + persistence).
 
+## v2.9.0 — Loop: quality capstone (tests, a11y, perf, audit)
+
+**Changed:**
+- Extracted OCR contact detection to a pure `detectContacts` helper + 3 tests.
+  The tests immediately caught a REAL bug: the email regex captured trailing
+  punctuation, producing duplicate emails (a@b.co and a@b.co.). Fixed by
+  stripping trailing .,;: — a genuine correctness win surfaced by new coverage.
+- Accessibility: aria-label on all five dialogs (accessible name for screen
+  readers); lazy-loading shot-library thumbnails.
+- Final audit: no debug leftovers, no dead Electron references, build clean.
+
+**Learned:**
+- Writing tests for "risky regexes" pays off immediately — the email-detection
+  bug had shipped unnoticed; the first test run exposed it.
+- Native <dialog> has implicit role but NO accessible name unless you add
+  aria-label/labelledby — easy to miss.
+
+**Maturity state (2.9.0):** four modes; undo/redo; persistent shot library;
+crop; settings; .md-folder notes; image optimize; undocked-board single-writer
+sync; OCR with tested detection; network ad blocking (macOS); GIF playback;
+URL scraping; accessibility focus rings + dialog labels. 116 frontend tests,
+4 Rust tests, 33-assertion hidden self-test, CI on macOS/Windows/Linux.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

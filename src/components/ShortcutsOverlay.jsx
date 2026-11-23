@@ -48,7 +48,7 @@ export default function ShortcutsOverlay({ onClose }) {
     return () => { d.removeEventListener('cancel', onCancel); d.close(); };
   }, []);
   return (
-    <dialog ref={ref} className="shortcuts-panel" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
+    <dialog ref={ref} className="shortcuts-panel" aria-label="Keyboard shortcuts" onClick={e => { if (e.target === ref.current) closeRef.current(); }}>
         <div className="shortcuts-header">
           <span>Keyboard shortcuts</span>
           <button className="shortcuts-close" onClick={onClose}>✕</button>
