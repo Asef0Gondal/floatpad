@@ -286,3 +286,5 @@ FloatPad runs entirely on your machine. There is no account, no telemetry and no
 ## License
 
 [MIT](LICENSE) © 2026 Asif Gondal
+
+<sub>Landing page and onboarding design pass using [unslop](https://github.com/heydamir/unslop) by Damir Sokolovsky (CC BY 4.0).</sub>

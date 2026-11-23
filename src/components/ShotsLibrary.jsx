@@ -78,7 +78,7 @@ export default function ShotsLibrary({ onClose }) {
           <div key={s.id} className="shot-card">
             {s.thumb
               ? <img className="shot-thumb" src={s.thumb} alt={s.name} loading="lazy" onClick={() => float(s)} title="Click to float" />
-              : <div className="shot-thumb shot-thumb-empty" onClick={() => float(s)} title="Click to float">🖼</div>}
+              : <div className="shot-thumb shot-thumb-empty" onClick={() => float(s)} title="Click to float"><svg viewBox="0 0 24 24" width="26" height="26" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round"><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5L6 23"/></svg></div>}
             <div className="shot-name" title={s.name}>{s.name}</div>
             {(s.tags || []).length > 0 && <div className="shot-tags">{s.tags.join(' · ')}</div>}
             <div className="shot-actions">

@@ -44,7 +44,7 @@ export default function Settings({ theme, onToggleTheme, borderless, onToggleBor
           <h3>Appearance</h3>
           <div className="settings-row">
             <span>Theme</span>
-            <button className="settings-btn" onClick={onToggleTheme}>{theme === 'dark' ? '🌙 Dark' : '☀️ Light'}</button>
+            <button className="settings-btn" onClick={onToggleTheme}>{theme === 'dark' ? 'Dark' : 'Light'}</button>
           </div>
           <div className="settings-row">
             <span>Potato mode (low resource)</span>

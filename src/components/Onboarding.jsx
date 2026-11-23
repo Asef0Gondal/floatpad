@@ -1,29 +1,33 @@
 import React, { useState, useEffect, useRef } from 'react';
 
+const I = ({ children }) => (
+  <svg viewBox="0 0 24 24" width="28" height="28" fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">{children}</svg>
+);
+
 const STEPS = [
   {
-    icon: '⊞',
+    icon: <I><rect x="3" y="3" width="18" height="18" rx="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.5-3.5L6 23"/></I>,
     title: 'Image Board',
     body: 'Drop images from anywhere onto the canvas. Drag to pan, scroll to zoom, pinch on trackpad. Double-click empty space to add a sticky note.',
     tips: ['⌘V to paste images', 'Drag from browser or Finder', '⌘⇧S to screenshot any area'],
   },
   {
-    icon: '▶',
+    icon: <I><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M7 3v18M17 3v18M3 8h4M3 16h4M17 8h4M17 16h4"/></I>,
     title: 'Video Player',
     body: 'Drop a local video file (or Browse). Full controls with A-B loop for repeating sections, frame-by-frame stepping, and variable speed. Use the Web mode for online video.',
     tips: ['Space play/pause', ', . to step frames', '⊡ grabs current frame → Board'],
   },
   {
-    icon: '◉',
+    icon: <I><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3a15 15 0 0 1 0 18M12 3a15 15 0 0 0 0 18"/></I>,
     title: 'Web Browser',
-    body: 'A real browser with Chrome 120 — YouTube, Notion, anything works. Right-click images to send them straight to your Board.',
+    body: 'A real browser (the native system webview) — YouTube, Notion, anything works. Right-click images to send them straight to your Board.',
     tips: ['⌘D to bookmark', '⌘1–9 to jump to bookmarks', 'Reader mode strips page clutter'],
   },
   {
-    icon: '◎',
+    icon: <I><path d="m12 2 9 5-9 5-9-5 9-5Z"/><path d="m3 12 9 5 9-5"/><path d="m3 17 9 5 9-5"/></I>,
     title: 'Always on top',
     body: 'FloatPad floats above every other window — your reference is always visible. Use ⌘⇧Space to hide/show without touching your mouse.',
-    tips: ['Opacity slider in the titlebar', '🥔 Potato mode = minimal RAM', 'Lives in the menu bar, not the Dock'],
+    tips: ['Opacity slider in the titlebar', 'Potato mode = minimal RAM', 'Lives in the menu bar, not the Dock'],
   },
 ];
 

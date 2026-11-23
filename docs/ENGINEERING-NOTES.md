@@ -514,6 +514,15 @@ sentence-case table headers (no uppercase tracking), weights 500/600, 4px spacin
 rhythm, varied card grid (Board spans 2, Always-on-top full width), hairline
 borders, no italic. Kept the palette, sections, order and the real visuals.
 
+## v2.9.10 — unslop the app UI + tiny README credit
+
+Applied the same unslop pass to the app's own screens: onboarding glyph icons ->
+line icons, removed the potato emoji, fixed a STALE onboarding claim ("Chrome 120"
+-> native system webview, leftover from Electron v1), Settings theme button emoji
+-> plain Dark/Light, shot-library empty placeholder emoji -> line icon, and the
+uppercase-tracked 700-weight section/standalone titles -> sentence case 600.
+Credit for unslop buried as a tiny <sub> line at the bottom of the README only.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
