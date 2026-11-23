@@ -533,6 +533,14 @@ the user's symptom. Now all three act on the CALLING webview's window (like
 win_opacity already did), so they work regardless of label lookup. Also shipped a
 clean rebuild after a stale bundle binary reproduced the failure.
 
+## v2.9.12 — detached windows resizable (user report)
+
+Detached panels are frameless; on macOS a borderless window needs the Resizable
+style mask to allow edge-drag resize. Added NSWindowStyleMaskResizable in
+platform::decorate (main + panels). Also added a visible bottom-right resize grip
+to standalone panels (rAF-throttled drag -> win-resize) as a guaranteed affordance,
+and removed the re-center from win_resize so it can be used for dragging.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

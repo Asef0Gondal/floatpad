@@ -84,7 +84,7 @@ pub fn set_movable(_win: &Window, _movable: bool) -> tauri::Result<()> {
 pub fn decorate(win: &Window) {
     #[cfg(target_os = "macos")]
     {
-        use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior};
+        use objc2_app_kit::{NSWindow, NSWindowCollectionBehavior, NSWindowStyleMask};
         let _ = win.set_visible_on_all_workspaces(true);
         if let Ok(ptr) = win.ns_window() {
             let ptr = ptr as usize;
@@ -95,6 +95,10 @@ pub fn decorate(win: &Window) {
                     b | NSWindowCollectionBehavior::CanJoinAllSpaces
                         | NSWindowCollectionBehavior::FullScreenAuxiliary,
                 );
+                // Borderless windows need the Resizable mask to allow edge-drag
+                // resizing (detached panels otherwise can't be resized).
+                let m = (*ns).styleMask();
+                (*ns).setStyleMask(m | NSWindowStyleMask::Resizable);
             });
         }
     }

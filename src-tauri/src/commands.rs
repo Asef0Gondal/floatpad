@@ -134,7 +134,6 @@ pub fn win_resize(webview: Webview, state: State<'_, MiniState>, w: u32, h: u32)
     *state.0.lock().unwrap() = None;
     let win = webview.window();
     let _ = win.set_size(tauri::LogicalSize::new(w, h));
-    let _ = win.center();
 }
 
 #[tauri::command]

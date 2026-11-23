@@ -1495,3 +1495,5 @@ input[type="range"], input[type="checkbox"], input[type="color"] { cursor: defau
 .crop-box { cursor: move !important; }
 .crop-nw, .crop-se { cursor: nwse-resize !important; }
 .crop-ne, .crop-sw { cursor: nesw-resize !important; }
+
+.panel-resize-grip{position:fixed;bottom:0;right:0;width:18px;height:18px;z-index:60;cursor:se-resize !important;background:linear-gradient(135deg,transparent 0 50%,var(--fp-border-mid) 50% 60%,transparent 60% 70%,var(--fp-border-mid) 70% 80%,transparent 80%);}

@@ -325,6 +325,21 @@ function AppMain() {
             <IconClose size={9}/>
           </button>
         </div>
+        <div className="panel-resize-grip" title="Drag to resize"
+          onPointerDown={e => {
+            e.preventDefault();
+            const sx=e.clientX, sy=e.clientY, sw=window.innerWidth, sh=window.innerHeight;
+            let raf=0;
+            const move=ev=>{
+              if(raf) return;
+              raf=requestAnimationFrame(()=>{ raf=0;
+                ipcRenderer.send('win-resize', Math.max(300, sw+ev.clientX-sx), Math.max(220, sh+ev.clientY-sy));
+              });
+            };
+            const up=()=>{ window.removeEventListener('pointermove',move); window.removeEventListener('pointerup',up); };
+            window.addEventListener('pointermove',move); window.addEventListener('pointerup',up);
+          }}
+        />
         <div style={{flex:1,overflow:'hidden',minHeight:0,display:'flex',flexDirection:'column'}}>
           {panelParam==='board' && <ImageBoard active={true}/>}
           {panelParam==='video' && <VideoPlayer active={true} potato={potato}/>}
