@@ -500,6 +500,20 @@ so it is easier to catch.
   the running app and exits before the self-test runs. Quit the running instance
   first. (Cost a couple of confusing debug cycles.)
 
+## Landing page: unslop pass
+
+Applied the unslop methodology (Damir Sokolovsky, github.com/heydamir/unslop,
+CC BY 4.0) to the GitHub Pages landing page. Direction taken from the product:
+quiet, exact, lived-in; world = a creative's night desk and pin-board; signature
+= FloatPad's dotted board grid as a subtle page texture; the real FloatPad-over-
+After-Effects hero/video is the one bright moment, chrome stays quiet.
+
+Passes: removed emoji card icons (now 18px line icons), removed the colored pill
+badge and the download emoji, off-white primary button instead of a colored one,
+sentence-case table headers (no uppercase tracking), weights 500/600, 4px spacing
+rhythm, varied card grid (Board spans 2, Always-on-top full width), hairline
+borders, no italic. Kept the palette, sections, order and the real visuals.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
