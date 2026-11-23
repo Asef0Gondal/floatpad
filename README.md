@@ -6,7 +6,7 @@
 
 <p align="center">
   A floating <strong>reference board &amp; moodboard</strong> that stays always-on-top.<br/>
-  The open-source <strong>PureRef / ScreenFloat alternative</strong> for macOS, Windows &amp; Linux —<br/>
+  The open-source <strong>PureRef / ScreenFloat alternative</strong> for macOS, Windows &amp; Linux:<br/>
   images, video, a real web browser and a writing pad in one floating overlay.
 </p>
 
@@ -25,17 +25,17 @@
 
 ---
 
-> FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view.
+> FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference, so I built myself an always-on-top pad that keeps everything in view.
 >
 > I have ADHD and OCD and had some free time, so I made this instead of a video based on a shitty brief. That's the entire origin story.
 >
-> **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app) — a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The legacy Electron shell was retired in v2.1.2 — Tauri is the only shell.
+> **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app): a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The legacy Electron shell was retired in v2.1.2; Tauri is the only shell.
 
 <p align="center">
   <a href="https://github.com/Asef0Gondal/floatpad/releases/latest"><strong>⬇ Download FloatPad</strong></a> · macOS (.dmg) · Windows (.exe) · Linux (.deb / AppImage)
 </p>
 
-**FloatPad** is a free, open-source **reference image board** and **moodboard** app — a lightweight **PureRef alternative** and **ScreenFloat alternative** built with **Rust** and **Tauri**. Keep reference images, screenshots, GIFs, video, web pages and markdown notes **always on top** of your work, with **OCR**, region **screenshots**, and a click-through floating overlay. It runs on **macOS, Windows and Linux** from one codebase, weighs ~10 MB, and collects no telemetry.
+**FloatPad** is a free, open-source **reference image board** and **moodboard** app, a lightweight **PureRef alternative** and **ScreenFloat alternative** built with **Rust** and **Tauri**. Keep reference images, screenshots, GIFs, video, web pages and markdown notes **always on top** of your work, with **OCR**, region **screenshots**, and a click-through floating overlay. It runs on **macOS, Windows and Linux** from one codebase, weighs ~10 MB, and collects no telemetry.
 
 ## Why FloatPad
 
@@ -47,7 +47,7 @@ Built for creative directors, designers, video editors and developers who need a
 
 ## How FloatPad compares
 
-Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef alternative**? FloatPad is the all-in-one option: instead of a single-purpose image viewer, it combines a reference board with a video player, a real web browser and a writing pad — plus OCR and region screenshots — in one native, open-source app.
+Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef alternative**? FloatPad is the all-in-one option: instead of a single-purpose image viewer, it combines a reference board with a video player, a real web browser and a writing pad, plus OCR and region screenshots, in one native, open-source app.
 
 | | FloatPad | PureRef | ScreenFloat | BeeRef |
 | --- | --- | --- | --- | --- |
@@ -94,7 +94,7 @@ Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef a
 ### Video
 
 - Open a local video file (browse or drag-drop); for online video use the Web mode
-- Full transport: play/pause, seek, volume, mute, frame-by-frame stepping, `0.25×–2×` speed
+- Full transport: play/pause, seek, volume, mute, frame-by-frame stepping, `0.25×-2×` speed
 - **A-B loop** for repeating a section while following along
 - **Grab frame → Board** to keep a still reference next to your work
 - Picture-in-Picture support
@@ -102,8 +102,8 @@ Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef a
 
 ### Web
 
-- Native system webview — WebKit on macOS, Chromium/WebView2 on Windows, WebKitGTK on Linux. YouTube, documentation, Notion and most sites work normally
-- URL bar with back / forward / reload, plus persistent bookmarks (`⌘D`, `⌘1–9`)
+- Native system webview: WebKit on macOS, Chromium/WebView2 on Windows, WebKitGTK on Linux. YouTube, documentation, Notion and most sites work normally
+- URL bar with back / forward / reload, plus persistent bookmarks (`⌘D`, `⌘1-9`)
 - **Reader mode** strips page clutter for long-form reading
 - **History** dropdown with the last 50 pages
 - **Ad and tracker blocking** at the session level, with a per-site allowlist toggle
@@ -112,19 +112,19 @@ Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef a
 
 ### Write
 
-- **Screenplay mode**: `Tab` cycles element types — SCENE → Action → CHARACTER → Dialogue → (parenthetical) — with automatic uppercase scene headings
-- **Markdown / freeform mode** with **live preview** — GFM tables, code, and task lists whose checkboxes you can click right in the preview
+- **Screenplay mode**: `Tab` cycles element types: SCENE → Action → CHARACTER → Dialogue → (parenthetical), with automatic uppercase scene headings
+- **Markdown / freeform mode** with **live preview**: GFM tables, code, and task lists whose checkboxes you can click right in the preview
 - Live word/page statistics, autoreload of the last document, and autosave to local storage
 - Open and save `.txt`, `.md` and Fountain files through native dialogs
 - Built-in 25-minute focus timer
 
 ## Window & workflow
 
-- **Always on top**, visible on every Space, including full-screen apps — or **always on bottom** (interactable wallpaper)
+- **Always on top**, visible on every Space, including full-screen apps, or **always on bottom** (interactable wallpaper)
 - **Lock the window position** so it can't be dragged accidentally
 - **Opacity** slider from 100% down to 15%
 - **Detach** toggles click-through, with mouse events forwarded to the window underneath
-- **Always-visible grab handle** on the left edge — drag it to move the window in any mode
+- **Always-visible grab handle** on the left edge; drag it to move the window in any mode
 - **Borderless view** (toggle in the titlebar): hides the titlebar for a clean canvas; hover the top edge to reveal it again, auto-hides
 - **Mini mode** collapses the window to a grabbable strip (drag the ⠿ grip) with just expand + close
 - **Responsive title bar**: controls compress as the window narrows; secondary controls fold into a ⋯ menu instead of disappearing, and a dedicated grip strip is always available for moving the window
@@ -170,21 +170,21 @@ Looking for a **PureRef alternative**, **ScreenFloat alternative** or **BeeRef a
 | --- | --- |
 | `⌘L` | Focus URL bar |
 | `⌘D` | Bookmark page |
-| `⌘1–9` | Jump to bookmark |
+| `⌘1-9` | Jump to bookmark |
 | Right-click image | Send to Board |
 
 Press `?` anywhere in the app for the full shortcut overlay.
 
-## Architecture (v2 — Rust/Tauri)
+## Architecture (v2: Rust/Tauri)
 
 FloatPad is a Tauri 2 app: a native Rust core with the system webview rendering the React UI.
 
-- **Rust core** — `src-tauri/src/`: window and panel lifecycle, tray, global shortcuts, opacity/click-through/all-Spaces via platform APIs (`objc2` on macOS, `windows-sys` on Windows), screen capture through `xcap`, persisted window bounds in `prefs.json`, ad-block allowlist.
-- **Embedded browser** — Web mode is a native child webview (Tauri multi-webview) positioned over the app's content area; a main-frame-only injected script reports SPA navigations, context menus and popups back to the shell and hides ad/tracker elements.
-- **Renderer** — React 18 + Vite 5 in `src/`, unchanged from v1: a single `App` shell owns mode switching, themes, opacity, mini/standalone state; each mode is a self-contained component under `src/modes/`.
-- **IPC** — `src/ipc.js` maps the app's channel names onto Tauri `invoke`/`listen`. File dialogs and file I/O go through the official `dialog`/`fs` plugins; everything window-related is a Rust command. Native `alert/confirm/prompt` are avoided (WKWebView suppresses them) in favor of the dialog plugin and inline inputs.
-- **Panel windows** — undocked modes are separate Tauri windows loading the same bundle with `?panel=<mode>`.
-- **Persistence** — window prefs and the ad-block allowlist live in `prefs.json` under the app config dir; the board autosaves to `localStorage` (restored on launch) and can be saved as `.floatpad` files; the Write pad autosaves on edit and on quit; bookmarks, theme and opacity persist too.
+- **Rust core** (`src-tauri/src/`): window and panel lifecycle, tray, global shortcuts, opacity/click-through/all-Spaces via platform APIs (`objc2` on macOS, `windows-sys` on Windows), screen capture through `xcap`, persisted window bounds in `prefs.json`, ad-block allowlist.
+- **Embedded browser**: Web mode is a native child webview (Tauri multi-webview) positioned over the app's content area; a main-frame-only injected script reports SPA navigations, context menus and popups back to the shell and hides ad/tracker elements.
+- **Renderer**: React 18 + Vite 5 in `src/`, unchanged from v1: a single `App` shell owns mode switching, themes, opacity, mini/standalone state; each mode is a self-contained component under `src/modes/`.
+- **IPC**: `src/ipc.js` maps the app's channel names onto Tauri `invoke`/`listen`. File dialogs and file I/O go through the official `dialog`/`fs` plugins; everything window-related is a Rust command. Native `alert/confirm/prompt` are avoided (WKWebView suppresses them) in favor of the dialog plugin and inline inputs.
+- **Panel windows**: undocked modes are separate Tauri windows loading the same bundle with `?panel=<mode>`.
+- **Persistence**: window prefs and the ad-block allowlist live in `prefs.json` under the app config dir; the board autosaves to `localStorage` (restored on launch) and can be saved as `.floatpad` files; the Write pad autosaves on edit and on quit; bookmarks, theme and opacity persist too.
 
 ### Platform notes & limitations
 
@@ -224,7 +224,7 @@ floatpad/
 
 ## Getting started
 
-**Requirements:** Node.js 18+ (20 LTS recommended — see `.nvmrc`), Rust stable ([rustup](https://rustup.rs)), and the Tauri platform prerequisites:
+**Requirements:** Node.js 18+ (20 LTS recommended, see `.nvmrc`), Rust stable ([rustup](https://rustup.rs)), and the Tauri platform prerequisites:
 
 - **macOS:** Xcode Command Line Tools (`xcode-select --install`)
 - **Windows:** WebView2 (preinstalled on 10/11) + MSVC build tools
@@ -261,7 +261,7 @@ npm run test:rust  # cargo unit tests (ad-block rule generation)
 ```
 
 There is also a hidden end-to-end self-test of the Rust plumbing (no window shown):
-with vite running, `FP_SELFTEST=1 cargo run` from `src-tauri/` — it checks window
+with vite running, `FP_SELFTEST=1 cargo run` from `src-tauri/`; it checks window
 controls, panels, the embedded browser round-trip, capture and the ad blocker,
 logging `SELFTEST PASS/FAIL` per assertion. See [docs/ENGINEERING-NOTES.md](docs/ENGINEERING-NOTES.md)
 for the debugging playbook and the root causes behind the shell's design rules.
@@ -275,7 +275,7 @@ FloatPad runs entirely on your machine. There is no account, no telemetry and no
 - `dist/`, `node_modules/` and `src-tauri/target/` are ignored; only sources are committed.
 - Every push to `main` runs CI (`.github/workflows/ci.yml`): the Vite bundle plus `cargo check` on macOS, Windows and Linux.
 - The Electron v1 shell was retired in v2.1.2 after a full A-to-Z audit; Tauri is the only shell.
-- `FP_SELFTEST=1 cargo run` (from `src-tauri/`, with vite running) executes a hidden end-to-end check of the window/panel/webview/capture plumbing — no window is shown.
+- `FP_SELFTEST=1 cargo run` (from `src-tauri/`, with vite running) executes a hidden end-to-end check of the window/panel/webview/capture plumbing (no window is shown).
 
 ## License
 
