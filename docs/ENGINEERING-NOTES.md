@@ -348,6 +348,19 @@ sync; OCR with tested detection; network ad blocking (macOS); GIF playback;
 URL scraping; accessibility focus rings + dialog labels. 116 frontend tests,
 4 Rust tests, 33-assertion hidden self-test, CI on macOS/Windows/Linux.
 
+## v2.9.1 — Board/Write toolbars moved to the bottom
+
+**Changed (user UX request):** the in-board tool menus sat at the TOP of the
+board/write area, directly under the borderless chrome-reveal hotspot — so
+reaching for a tool kept accidentally triggering the titlebar auto-hide. Moved
+the Board and Write toolbars to the BOTTOM via CSS flex `order` (no JSX
+restructure); borders flipped to top. The Web URL bar stays at top (navigation
+convention).
+
+**Learned:** interactive tool strips must not share an edge with an auto-hide
+reveal hotspot. CSS `order` relocates flex children cleanly without touching
+component structure or the absolutely-positioned overlays.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

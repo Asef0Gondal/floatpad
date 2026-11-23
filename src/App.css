@@ -1469,3 +1469,15 @@ button:focus:not(:focus-visible) { outline: none; }
 .wfb-file:hover { color: var(--fp-text); background: var(--fp-bg-hover); }
 .wfb-file.active { background: var(--fp-accent-dim); color: var(--fp-accent-text); border-color: var(--fp-accent); }
 .wfb-empty { color: var(--fp-text-faint); font-size: 11px; padding: 0 6px; }
+
+/* ── Move Board/Write toolbars to the BOTTOM ──
+   At the top they sat under the borderless chrome-reveal hotspot, so reaching
+   for a tool kept triggering the titlebar. Bottom placement avoids the conflict. */
+.board-wrap > .toolbar-scroll { order: 2; }
+.board-wrap > .board { order: 1; }
+.write-wrap > .write-body { order: 1; }
+.write-wrap > .write-files-bar { order: 2; }
+.write-wrap > .toolbar-scroll { order: 3; }
+.board-wrap .mode-toolbar,
+.write-wrap .mode-toolbar { border-bottom: none; border-top: 1px solid var(--fp-border); }
+.write-wrap .write-files-bar { border-bottom: none; border-top: 1px solid var(--fp-border); }
