@@ -585,7 +585,13 @@ pub async fn shot_open(
     if std::env::var("FP_SELFTEST").is_ok() {
         builder = builder.visible(false);
     }
-    let win = builder.build().map_err(|e| e.to_string())?;
+    let win = match builder.build() {
+        Ok(w) => w,
+        Err(e) => {
+            payloads.0.lock().unwrap().remove(&label); // don't leak the payload on failure
+            return Err(e.to_string());
+        }
+    };
     platform::decorate(&win.as_ref().window());
 
     // Drop the payload if the window closes before (or without) fetching it,

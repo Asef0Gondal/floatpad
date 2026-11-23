@@ -165,6 +165,24 @@ layout model fights the current design.
 a `useEffect([onClose])` calling `showModal()` would re-run and throw on an
 already-open dialog. Use a mount-only effect + a ref to the latest onClose.
 
+## v2.2.0 — Loop 1: Board undo/redo + hardening
+
+**Changed:** Cmd+Z / Cmd+Shift+Z (and Cmd+Y) undo/redo on the Board, plus ↶ ↷
+toolbar buttons. Built as a pure `boardHistory.js` module (create/push/undo/redo,
+100-deep cap, redo-tail truncation) with 6 unit tests, then wired into ImageBoard.
+
+**Learned:**
+- Snapshot history must be DEBOUNCED (~250ms): the per-image opacity slider fires
+  setImages on every tick, which would flood the stack with micro-steps. Discrete
+  actions (drag/resize/pen) already commit on mouseup, so they record cleanly.
+- A `restoring` ref flag prevents undo/redo restores from being recorded as new
+  edits; a `boardReady` gate makes the restored board index 0 (so undo can't walk
+  back past the loaded state into an empty board).
+- Alias imported predicates (`canUndo as histCanUndo`) to avoid clashing with the
+  React state of the same name.
+- Fixed a real leak: `shot_open` inserted the image payload BEFORE building the
+  window; a build failure left it in the map forever. Now removed on failure.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

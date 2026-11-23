@@ -20,6 +20,10 @@ import {
 import { ipcRenderer } from '../ipc';
 import { evalInWebview } from '../utils/tauriWebview';
 import ScrollToolbar from '../components/ScrollToolbar';
+import {
+  createHistory, pushHistory, undoHistory, redoHistory, currentSnapshot,
+  canUndo as histCanUndo, canRedo as histCanRedo,
+} from '../utils/boardHistory';
 
 const EXPORT_PADDING = 48;
 const LABEL_WIDTH = 180;
@@ -382,6 +386,7 @@ export default function ImageBoard({ active }) {
   const [scrapeBusy, setScrapeBusy] = useState(false);
   const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
   const [commentEdit, setCommentEdit] = useState(null); // {id, text}
+  const [boardReady, setBoardReady] = useState(!isMainBoard);
   const focusRef = useRef(null);
   const preFocusTf = useRef(null);
   const arrangeRef = useRef(null);
@@ -413,7 +418,7 @@ export default function ImageBoard({ active }) {
 
   // Restore the autosaved board from disk (main window only), once.
   useEffect(() => {
-    if (!isMainBoard) { boardLoaded.current = true; return; }
+    if (!isMainBoard) { boardLoaded.current = true; setBoardReady(true); return; }
     ipcRenderer.invoke('board-autosave-read').then(raw => {
       if (raw) {
         try {
@@ -428,7 +433,8 @@ export default function ImageBoard({ active }) {
         } catch { /* corrupt autosave — start empty */ }
       }
       boardLoaded.current = true;
-    }).catch(() => { boardLoaded.current = true; });
+      setBoardReady(true);
+    }).catch(() => { boardLoaded.current = true; setBoardReady(true); });
   }, []);
 
   // Autosave to a Rust-written file (no quota ceiling): debounced while editing,
@@ -449,6 +455,57 @@ export default function ImageBoard({ active }) {
       document.removeEventListener('visibilitychange', onVis);
     };
   }, [images, notes, annotations]);
+
+  // ── Undo / redo: snapshot history, debounced to coalesce slider ticks ──
+  const historyRef = useRef(null);
+  const latestSnapRef = useRef({ images, notes, annotations });
+  latestSnapRef.current = { images, notes, annotations };
+  const restoringRef = useRef(false);
+  const historyTimerRef = useRef(null);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
+
+  const syncHistoryFlags = h => { setCanUndo(histCanUndo(h)); setCanRedo(histCanRedo(h)); };
+
+  const commitHistory = useCallback(() => {
+    if (historyTimerRef.current) { clearTimeout(historyTimerRef.current); historyTimerRef.current = null; }
+    const snap = latestSnapRef.current;
+    if (!historyRef.current) { historyRef.current = createHistory(snap); syncHistoryFlags(historyRef.current); return; }
+    const cur = currentSnapshot(historyRef.current);
+    if (cur.images !== snap.images || cur.notes !== snap.notes || cur.annotations !== snap.annotations) {
+      historyRef.current = pushHistory(historyRef.current, snap);
+      syncHistoryFlags(historyRef.current);
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!boardReady) return undefined;
+    if (restoringRef.current) { restoringRef.current = false; return undefined; }
+    if (!historyRef.current) { historyRef.current = createHistory(latestSnapRef.current); syncHistoryFlags(historyRef.current); return undefined; }
+    if (historyTimerRef.current) clearTimeout(historyTimerRef.current);
+    historyTimerRef.current = setTimeout(() => { historyTimerRef.current = null; commitHistory(); }, 250);
+    return () => { if (historyTimerRef.current) { clearTimeout(historyTimerRef.current); historyTimerRef.current = null; } };
+  }, [images, notes, annotations, boardReady, commitHistory]);
+
+  const undoBoard = useCallback(() => {
+    commitHistory();
+    if (!historyRef.current || !histCanUndo(historyRef.current)) return;
+    historyRef.current = undoHistory(historyRef.current);
+    restoringRef.current = true;
+    const s = currentSnapshot(historyRef.current);
+    setImages(s.images); setNotes(s.notes); setAnnotations(s.annotations);
+    syncHistoryFlags(historyRef.current);
+  }, [commitHistory]);
+
+  const redoBoard = useCallback(() => {
+    commitHistory();
+    if (!historyRef.current || !histCanRedo(historyRef.current)) return;
+    historyRef.current = redoHistory(historyRef.current);
+    restoringRef.current = true;
+    const s = currentSnapshot(historyRef.current);
+    setImages(s.images); setNotes(s.notes); setAnnotations(s.annotations);
+    syncHistoryFlags(historyRef.current);
+  }, [commitHistory]);
 
   useEffect(() => {
     localStorage.setItem('fp_board_tool', tool);
@@ -1362,6 +1419,16 @@ export default function ImageBoard({ active }) {
         duplicateSelection();
       }
 
+      // ⌘Z undo · ⌘⇧Z / ⌘Y redo
+      if ((e.metaKey || e.ctrlKey) && e.key === 'z' && document.activeElement === document.body) {
+        e.preventDefault();
+        e.shiftKey ? redoBoard() : undoBoard();
+      }
+      if ((e.metaKey || e.ctrlKey) && e.key === 'y' && document.activeElement === document.body) {
+        e.preventDefault();
+        redoBoard();
+      }
+
       // F focus selection · ←/→ step in focus mode (PureRef)
       if (e.key === 'f' && !e.metaKey && !e.ctrlKey && document.activeElement === document.body) {
         const first = selected.size
@@ -1413,7 +1480,7 @@ export default function ImageBoard({ active }) {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [active, selected, zoomToFit, duplicateSelection, enterFocus, exitFocus, stepFocus, setSelectionGray]);
+  }, [active, selected, zoomToFit, duplicateSelection, enterFocus, exitFocus, stepFocus, setSelectionGray, undoBoard, redoBoard]);
 
   const onDrop = async e => {
     e.preventDefault();
@@ -1666,6 +1733,9 @@ export default function ImageBoard({ active }) {
           <IconFit size={13}/>
           Fit
         </button>
+
+        <button className="tb-tool" onClick={undoBoard} disabled={!canUndo} title="Undo  Cmd+Z" style={!canUndo ? { opacity: .35 } : undefined}>↶</button>
+        <button className="tb-tool" onClick={redoBoard} disabled={!canRedo} title="Redo  Cmd+Shift+Z" style={!canRedo ? { opacity: .35 } : undefined}>↷</button>
 
         <div className="tb-tool-sep"/>
 
