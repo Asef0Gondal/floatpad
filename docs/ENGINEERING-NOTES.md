@@ -541,6 +541,12 @@ platform::decorate (main + panels). Also added a visible bottom-right resize gri
 to standalone panels (rAF-throttled drag -> win-resize) as a guaranteed affordance,
 and removed the re-center from win_resize so it can be used for dragging.
 
+## v2.9.13 — audit: screenshot overlay must stay fixed-size
+
+The v2.9.12 Resizable mask is added in decorate(), which decorate_overlay() also
+calls, so the fullscreen capture overlay became resizable (would break capture
+coords). decorate_overlay now clears the Resizable bit after decorate().
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

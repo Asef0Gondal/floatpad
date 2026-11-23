@@ -113,11 +113,15 @@ pub fn decorate_overlay(win: &Window) {
     decorate(win);
     #[cfg(target_os = "macos")]
     {
-        use objc2_app_kit::NSWindow;
+        use objc2_app_kit::{NSWindow, NSWindowStyleMask};
         if let Ok(ptr) = win.ns_window() {
             let ptr = ptr as usize;
             on_main(win, move || unsafe {
-                (*(ptr as *mut NSWindow)).setLevel(1000); // kCGScreenSaverWindowLevel
+                let ns = ptr as *mut NSWindow;
+                (*ns).setLevel(1000); // kCGScreenSaverWindowLevel
+                // The capture overlay must stay fixed-size (decorate() adds Resizable).
+                let m = (*ns).styleMask();
+                (*ns).setStyleMask(m & !NSWindowStyleMask::Resizable);
             });
         }
     }
