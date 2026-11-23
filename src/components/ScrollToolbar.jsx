@@ -20,11 +20,19 @@ export default function ScrollToolbar({ className = '', children }) {
     if (!el) return;
     update();
     el.addEventListener('scroll', update, { passive: true });
+    const onWheel = e => {
+      if (Math.abs(e.deltaY) > Math.abs(e.deltaX)) {
+        el.scrollBy({ left: e.deltaY });
+        e.preventDefault();
+      }
+    };
+    el.addEventListener('wheel', onWheel, { passive: false });
     const ro = new ResizeObserver(update);
     ro.observe(el);
     window.addEventListener('resize', update);
     return () => {
       el.removeEventListener('scroll', update);
+      el.removeEventListener('wheel', onWheel);
       ro.disconnect();
       window.removeEventListener('resize', update);
     };

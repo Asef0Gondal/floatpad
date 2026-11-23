@@ -238,6 +238,40 @@ crop, settings, accessibility focus rings, file-based autosave, network ad
 blocking (macOS), OCR, GIF playback, URL scraping. 108 frontend tests, 4 Rust
 tests, 30-assertion hidden end-to-end self-test, CI on macOS/Windows/Linux.
 
+## v2.5.1 — external-audit triage (fixed the real ones, rejected the forced)
+
+Another agent's audit was reviewed critically against the current code; fixed
+only what was genuinely broken:
+- **Retina screenshot crop (real, critical):** the overlay canvas buffer was
+  sized to CSS pixels but the crop sampled at rect×dpr → 2× offset / out-of-
+  bounds on Retina. Buffer now sized to physical pixels (innerWidth×dpr).
+- **Drag-out silently broken (real):** `tempDir()` needs `core:path:default`,
+  which was never granted (resolved ACL had no resolve-directory). Granted it.
+  (The audit's "missing tauri-plugin-path" wording was imprecise — path is a
+  core plugin; the *permission* was missing.)
+- **Shortcuts dead after Write→Board (real):** the button-focus preventDefault
+  also blocked blurring the Write textarea, so activeElement stayed the hidden
+  textarea and board shortcuts (guard activeElement===body) failed. Now blurs
+  INPUT/TEXTAREA/SELECT on button mousedown.
+- **Panel lifecycle events ignored (real):** App now listens panel-docked /
+  panel-closed and returns the main window to that mode.
+- **.mkv/.avi drop (real):** macOS gives empty MIME; now also matches extension.
+- **Off-screen restore (real):** saved x/y on a disconnected display now
+  re-centers (overlap test against available_monitors).
+- **Toolbar vertical-wheel (real polish):** wheel deltaY now scrolls horizontally.
+- **Doc drift (real):** Onboarding no longer mentions the removed video-URL
+  paste; OCR has a real `T` shortcut now (⌥T remains pixel-art); README says
+  native system webview (WebKit/WebView2/WebKitGTK), not "Chromium".
+
+**Rejected / not forced:**
+- "Undocked board opens empty / discards work" is a REAL design limitation, but
+  the suggested fix (panel + main both read/write one autosave file) creates
+  two writers → data races. Panels are independent by design; a correct fix
+  needs shared board state (BroadcastChannel/single source) — deferred, not
+  forced. Documented as a known limitation.
+- The audit's "OCR implemented as ⌥T" was WRONG (⌥T is pixel-art); OCR was
+  button-only. Resolved by adding a genuine `T` shortcut.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

@@ -1462,6 +1462,12 @@ export default function ImageBoard({ active }) {
         setSelectionGray(anyColor);
       }
 
+      // T → OCR the single selected image (⌥T is pixel-art below)
+      if (e.key === 't' && !e.altKey && !e.metaKey && !e.ctrlKey && document.activeElement === document.body) {
+        const img = selected.size === 1 ? imagesRef.current.find(i => selected.has(i.id)) : null;
+        if (img) { e.preventDefault(); runOcr(img); }
+      }
+
       // ⌥T pixel-art sampling (PureRef)
       if (e.altKey && e.key === 't' && document.activeElement === document.body) {
         e.preventDefault();
@@ -1492,7 +1498,7 @@ export default function ImageBoard({ active }) {
       window.removeEventListener('keydown', onKeyDown);
       window.removeEventListener('keyup', onKeyUp);
     };
-  }, [active, selected, zoomToFit, duplicateSelection, enterFocus, exitFocus, stepFocus, setSelectionGray, undoBoard, redoBoard]);
+  }, [active, selected, zoomToFit, duplicateSelection, enterFocus, exitFocus, stepFocus, setSelectionGray, undoBoard, redoBoard, runOcr]);
 
   const onDrop = async e => {
     e.preventDefault();

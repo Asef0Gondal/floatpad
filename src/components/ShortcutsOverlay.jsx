@@ -15,6 +15,8 @@ const SECTIONS = [
     ['Drag selection', 'Rubber-band select'],
     ['⌫',              'Delete selected'],
     ['⌘0',             'Zoom to fit'],
+    ['T',              'OCR selected image'],
+    ['⌥T',             'Pixel-art sampling'],
     ['⤢ handle',       'Drag image out to Finder / Figma'],
   ]},
   { title: 'Video', rows: [

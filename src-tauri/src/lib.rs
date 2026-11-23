@@ -159,6 +159,21 @@ pub fn run() {
                 builder = builder.position(num("x", 0.0), num("y", 0.0));
             }
             let win = builder.build()?;
+            // If the saved position lands on a disconnected display, re-center.
+            if prefs.contains_key("x") && prefs.contains_key("y") {
+                if let Ok(pos) = win.outer_position() {
+                    let scale = win.scale_factor().unwrap_or(1.0);
+                    let lp = pos.to_logical::<f64>(scale);
+                    let sz = win.inner_size().map(|s| s.to_logical::<f64>(scale)).unwrap_or_default();
+                    let on_screen = app.available_monitors().map(|ms| ms.iter().any(|m| {
+                        let mp = m.position().to_logical::<f64>(m.scale_factor());
+                        let msz = m.size().to_logical::<f64>(m.scale_factor());
+                        lp.x < mp.x + msz.width && lp.x + sz.width > mp.x
+                            && lp.y < mp.y + msz.height && lp.y + sz.height > mp.y
+                    })).unwrap_or(false);
+                    if !on_screen { let _ = win.center(); }
+                }
+            }
             platform::decorate(&win.as_ref().window());
             let selftest_mode = std::env::var("FP_SELFTEST").is_ok();
             if !selftest_mode {

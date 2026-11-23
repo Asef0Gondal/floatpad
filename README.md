@@ -40,7 +40,7 @@ Built for video editors, designers and developers who need a second screen that 
 | --- | --- |
 | **Board** | Infinite canvas for images, annotations, sticky notes and screenshots |
 | **Video** | Local files with A-B loop, frame stepping and frame grabbing (use Web mode for online video) |
-| **Web** | A real Chromium browser with bookmarks, reader mode and image-to-Board actions |
+| **Web** | A real browser (native system webview) with bookmarks, reader mode and image-to-Board actions |
 | **Write** | Screenplay-format or Markdown writing pad with autosave and a focus timer |
 
 ### Board
@@ -73,7 +73,7 @@ Built for video editors, designers and developers who need a second screen that 
 
 ### Web
 
-- Embedded Chromium (`webview`) — YouTube, documentation, Notion and most sites work normally
+- Native system webview — WebKit on macOS, Chromium/WebView2 on Windows, WebKitGTK on Linux. YouTube, documentation, Notion and most sites work normally
 - URL bar with back / forward / reload, plus persistent bookmarks (`⌘D`, `⌘1–9`)
 - **Reader mode** strips page clutter for long-form reading
 - **History** dropdown with the last 50 pages

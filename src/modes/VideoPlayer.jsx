@@ -186,7 +186,7 @@ export default function VideoPlayer({ active, potato }) {
   const onDragOver  = e => e.preventDefault();
   const onDrop = e => {
     e.preventDefault(); setDragOver(false);
-    const f = [...e.dataTransfer.files].find(f => f.type.startsWith('video/'));
+    const f = [...e.dataTransfer.files].find(f => f.type.startsWith('video/') || /\.(mp4|mov|mkv|avi|webm|m4v|flv|ogv)$/i.test(f.name));
     if (f) loadSrc(URL.createObjectURL(f));
   };
 

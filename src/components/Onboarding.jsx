@@ -10,7 +10,7 @@ const STEPS = [
   {
     icon: '▶',
     title: 'Video Player',
-    body: 'Drop any video file or paste a direct URL. Full controls with A-B loop for repeating sections, frame-by-frame stepping, and variable speed.',
+    body: 'Drop a local video file (or Browse). Full controls with A-B loop for repeating sections, frame-by-frame stepping, and variable speed. Use the Web mode for online video.',
     tips: ['Space play/pause', ', . to step frames', '⊡ grabs current frame → Board'],
   },
   {

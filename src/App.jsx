@@ -136,9 +136,26 @@ function AppMain() {
   // after any tool click. Preventing mousedown default blocks focus but still
   // fires click; keyboard Tab focus is unaffected.
   useEffect(() => {
-    const h = e => { if (e.target instanceof Element && e.target.closest('button')) e.preventDefault(); };
+    const h = e => {
+      if (e.target instanceof Element && e.target.closest('button')) {
+        const ae = document.activeElement;
+        if (ae && /^(INPUT|TEXTAREA|SELECT)$/.test(ae.tagName)) ae.blur();
+        e.preventDefault();
+      }
+    };
     document.addEventListener('mousedown', h);
     return () => document.removeEventListener('mousedown', h);
+  }, []);
+
+  // Panel lifecycle: docking back or closing a panel returns the main window to that mode.
+  useEffect(() => {
+    const back = (_, id) => { if (MODES.some(m => m.id === id)) setMode(id); };
+    ipcRenderer.on('panel-docked', back);
+    ipcRenderer.on('panel-closed', back);
+    return () => {
+      ipcRenderer.removeListener('panel-docked', back);
+      ipcRenderer.removeListener('panel-closed', back);
+    };
   }, []);
 
   // Close menus on outside click
