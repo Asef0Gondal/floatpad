@@ -25,7 +25,9 @@
 
 ---
 
-> FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view. That's the entire origin story.
+> FloatPad came into existence for one simple reason: **I needed it.** As a creative director, I got tired of alt-tabbing away from my work every time I had to check a reference — so I built myself an always-on-top pad that keeps everything in view.
+>
+> I have ADHD and OCD and had some free time, so I made this instead of a video based on a shitty brief. That's the entire origin story.
 >
 > **🦀 v2 is the Rust rewrite.** The shell is now [Tauri 2](https://tauri.app) — a native Rust core instead of Electron, same React UI, ~10 MB app instead of ~250 MB. macOS is the primary platform; Windows and Linux build from the same codebase. The legacy Electron shell was retired in v2.1.2 — Tauri is the only shell.
 
