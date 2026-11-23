@@ -177,7 +177,7 @@ export default function Write({ active }) {
   }, []);
   const newMdFile = useCallback(async () => {
     if (!folder) return;
-    const path = `${folder}/note-${Date.now()}.md`;
+    const path = `${folder}/note-${Date.now()}-${Math.random().toString(36).slice(2, 6)}.md`;
     await ipcRenderer.invoke('file-write', path, '');
     await refreshFiles(folder);
     setContent('');

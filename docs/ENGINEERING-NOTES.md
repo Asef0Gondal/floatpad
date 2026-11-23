@@ -361,6 +361,17 @@ convention).
 reveal hotspot. CSS `order` relocates flex children cleanly without touching
 component structure or the absolutely-positioned overlays.
 
+## v2.9.2 — audit: bottom-toolbar regression + hardening
+
+**Found & fixed (self-audit after the toolbar move):**
+- REGRESSION: moving the Board/Write toolbars to the bottom put the focus-bar,
+  OCR panel and GIF bar (all `bottom:14px`, positioned vs the panel area) ON TOP
+  of the new bottom toolbar. Lifted them to `bottom:52px` (14 + 38px toolbar);
+  GIF bar focus-stack offset 60→98. Lesson: relocating a toolbar must re-check
+  every absolutely-positioned overlay anchored to the same edge.
+- Hardening: .md new-file names now include a random suffix (Date.now() alone
+  could collide within a millisecond and clobber a file).
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

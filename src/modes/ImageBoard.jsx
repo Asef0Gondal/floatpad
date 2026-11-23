@@ -2327,7 +2327,7 @@ export default function ImageBoard({ active }) {
         )}
 
         {gif && (
-          <div className="focus-bar gif-bar" style={focusId ? { bottom: 60 } : undefined}>
+          <div className="focus-bar gif-bar" style={focusId ? { bottom: 98 } : undefined}>
             <button className="focus-btn" onClick={() => gifStep(-1)} title="Previous frame">⏮</button>
             <button className="focus-btn" onClick={() => setGif(g => ({ ...g, playing: !g.playing }))} title="Play / pause">
               {gif.playing ? '⏸' : '▶'}
