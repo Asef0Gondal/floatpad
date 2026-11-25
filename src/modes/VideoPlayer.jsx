@@ -43,7 +43,10 @@ export default function VideoPlayer({ active, potato }) {
   }, [tick, potato]);
 
   // ── Load ─────────────────────────────────────────────────
+  const blobRef = useRef(null);
   const loadSrc = useCallback((src) => {
+    if (blobRef.current) URL.revokeObjectURL(blobRef.current);
+    blobRef.current = src.startsWith('blob:') ? src : null;
     const v = vidRef.current;
     if (!v) return;
     v.src = src; v.volume = volume; v.playbackRate = speed;
@@ -54,6 +57,7 @@ export default function VideoPlayer({ active, potato }) {
 
   const eject = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
+    if (blobRef.current) { URL.revokeObjectURL(blobRef.current); blobRef.current = null; }
     const v = vidRef.current;
     if (!v) return;
     v.pause(); v.src = '';
@@ -93,21 +97,23 @@ export default function VideoPlayer({ active, potato }) {
   // Pause when tab is hidden
   useEffect(() => { if (!active && playing) vidRef.current?.pause(); }, [active, playing]);
 
+  const safeDur = x => Number.isFinite(x.duration) ? x.duration : x.currentTime;
+
   // ── Keyboard ─────────────────────────────────────────────
   useEffect(() => {
     const h = e => {
       if (!active || !loaded) return;
-      if (document.activeElement?.tagName === 'INPUT') return;
+      if (['INPUT','SELECT','TEXTAREA'].includes(document.activeElement?.tagName)) return;
       const v = vidRef.current;
       switch (e.code) {
         case 'Space':      e.preventDefault(); v.paused ? v.play() : v.pause(); break;
         case 'ArrowLeft':  e.preventDefault(); v.currentTime = Math.max(0, v.currentTime - 5); break;
-        case 'ArrowRight': e.preventDefault(); v.currentTime = Math.min(v.duration, v.currentTime + 5); break;
+        case 'ArrowRight': e.preventDefault(); v.currentTime = Math.min(safeDur(v), v.currentTime + 5); break;
         case 'ArrowUp':    e.preventDefault(); v.volume = Math.min(1, v.volume + 0.05); setVolume(v.volume); break;
         case 'ArrowDown':  e.preventDefault(); v.volume = Math.max(0, v.volume - 0.05); setVolume(v.volume); break;
         case 'KeyM':       v.muted = !v.muted; setMuted(v.muted); break;
         case 'Comma':      e.preventDefault(); v.pause(); v.currentTime = Math.max(0, v.currentTime - 1/30); break;
-        case 'Period':     e.preventDefault(); v.pause(); v.currentTime = Math.min(v.duration, v.currentTime + 1/30); break;
+        case 'Period':     e.preventDefault(); v.pause(); v.currentTime = Math.min(safeDur(v), v.currentTime + 1/30); break;
         default: break;
       }
     };
@@ -254,13 +260,13 @@ export default function VideoPlayer({ active, potato }) {
             {/* Playback */}
             <button className="vc-btn" onClick={()=>{const v=vidRef.current;v.currentTime=Math.max(0,v.currentTime-5);}} title="Back 5s  ←">⏮</button>
             <button className="vc-btn vc-btn--play" onClick={togglePlay} title="Play/Pause  Space">{playing?'⏸':'▶'}</button>
-            <button className="vc-btn" onClick={()=>{const v=vidRef.current;v.currentTime=Math.min(v.duration,v.currentTime+5);}} title="Forward 5s  →">⏭</button>
+            <button className="vc-btn" onClick={()=>{const v=vidRef.current;v.currentTime=Math.min(safeDur(v),v.currentTime+5);}} title="Forward 5s  →">⏭</button>
 
             <div className="vc-sep"/>
 
             {/* Frame step */}
             <button className="vc-btn vc-btn--sm" onClick={()=>{const v=vidRef.current;v.pause();v.currentTime=Math.max(0,v.currentTime-1/30);}} title="Prev frame  ,">‹</button>
-            <button className="vc-btn vc-btn--sm" onClick={()=>{const v=vidRef.current;v.pause();v.currentTime=Math.min(v.duration,v.currentTime+1/30);}} title="Next frame  .">›</button>
+            <button className="vc-btn vc-btn--sm" onClick={()=>{const v=vidRef.current;v.pause();v.currentTime=Math.min(safeDur(v),v.currentTime+1/30);}} title="Next frame  .">›</button>
 
             <div className="vc-sep"/>
 

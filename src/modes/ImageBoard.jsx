@@ -13,6 +13,7 @@ import {
   IconTrash,
 } from '../components/Icons';
 import { loadImageDimensions, scaleToFit, fileToDataUrl, uid, ensureUidAbove, normalizeImageModel, detectContacts } from '../utils/helpers';
+import { boardSink } from '../utils/pendingImages';
 import {
   alignImages, distributeImages, normalizeImages, stackImages, packImages, duplicateImages,
 } from '../utils/boardArrange';
@@ -600,7 +601,15 @@ export default function ImageBoard({ active }) {
 
   const addImage = useCallback(async (src, dropCx, dropCy, source = null) => {
     try {
-      const { w: nw, h: nh } = await loadImageDimensions(src);
+      // Remote images are fetched to data: URLs (Rust, no CORS) so OCR / optimize /
+      // shot / crop / export all work; keep the original URL as `source`.
+      let finalSrc = src;
+      let finalSource = source;
+      if (/^https?:\/\//i.test(src)) {
+        finalSource = finalSource ?? src;
+        try { finalSrc = await ipcRenderer.invoke('fetch-image-dataurl', src); } catch { /* keep URL fallback */ }
+      }
+      const { w: nw, h: nh } = await loadImageDimensions(finalSrc);
       const { w, h } = scaleToFit(nw, nh, 380);
       let x;
       let y;
@@ -619,8 +628,8 @@ export default function ImageBoard({ active }) {
         ...prev,
         normalizeImageModel({
           id: uid(),
-          src,
-          source,
+          src: finalSrc,
+          source: finalSource,
           x,
           y,
           w,
@@ -640,18 +649,12 @@ export default function ImageBoard({ active }) {
     }
   }, [toCanvas]);
 
+  // Receive screenshot / grab-frame images via the App-level sink (works even
+  // if the Board mounts after the capture); drain anything queued pre-mount.
   useEffect(() => {
-    const onShot = (_, dataUrl) => addImage(dataUrl, null, null);
-    ipcRenderer.on('screenshot-result', onShot);
-    return () => ipcRenderer.removeListener('screenshot-result', onShot);
-  }, [addImage]);
-
-  useEffect(() => {
-    const ch = new BroadcastChannel('floatpad');
-    ch.onmessage = e => {
-      if (e.data?.type === 'grab-frame') addImage(e.data.dataUrl, null, null);
-    };
-    return () => ch.close();
+    boardSink.add = url => addImage(url, null, null);
+    boardSink.queue.splice(0).forEach(url => addImage(url, null, null));
+    return () => { boardSink.add = null; };
   }, [addImage]);
 
   const openDialog = useCallback(async () => {
@@ -1176,11 +1179,9 @@ export default function ImageBoard({ active }) {
   const duplicateSelection = useCallback(() => {
     const ids = selected.size ? selected : new Set(imagesRef.current.map(i => i.id));
     if (!ids.size) return;
-    setImages(prev => {
-      const { images: next, newIds } = duplicateImages(prev, ids);
-      setSelected(new Set(newIds));
-      return next;
-    });
+    const { images: next, newIds } = duplicateImages(imagesRef.current, ids);
+    setImages(next);
+    setSelected(new Set(newIds));
   }, [selected]);
 
   const setSelectionGray = useCallback(gray => {
@@ -2225,7 +2226,7 @@ export default function ImageBoard({ active }) {
                       className="bia-btn"
                       onClick={e => {
                         e.stopPropagation();
-                        ipcRenderer.invoke('shot-open', img.src, img.origW || img.w, img.origH || img.h, img.source ? img.source.split('/').pop() : 'Board image', true);
+                        ipcRenderer.invoke('shot-open', img.src, img.origW || img.w, img.origH || img.h, img.source ? img.source.split(/[\\/]/).pop() : 'Board image', true);
                       }}
                       title="Float as its own window (shot)"
                     >

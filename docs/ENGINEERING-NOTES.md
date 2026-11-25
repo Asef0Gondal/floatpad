@@ -547,6 +547,23 @@ The v2.9.12 Resizable mask is added in decorate(), which decorate_overlay() also
 calls, so the fullscreen capture overlay became resizable (would break capture
 coords). decorate_overlay now clears the Resizable bit after decorate().
 
+## v2.9.14 — external-audit triage (real fixes, risky rewrites deferred)
+
+Fixed (verified real): ipc listeners keyed by (channel,handler) (leak/collision);
+remote URL images fetched to data: via Rust ureq (fixes OCR/optimize/shot/crop/
+export for URL images, keeps source); screenshot/grab-frame buffered via boardSink
+until Board mounts; win_detach/bottom/lock use calling webview; screenshot overlay
+positioned at main's monitor origin (multi-monitor) ; web_create rejects non-http
+schemes; Browser ctx-menu single offset; video NaN-duration guard + SELECT/TEXTAREA
+guard + objectURL revoke; duplicateSelection/toggleTimer no nested setState;
+cross-platform path basename; package start->tauri dev + type:module; removed
+github_ship.sh; softwareVersion synced.
+
+Deferred (large/risky, not forced): ImageBoard monolith split, GIF per-frame
+re-render isolation, content-addressed image blobs for autosave/sync, export
+dot-pattern/rotation bounds, adblock anchor tightening. These are perf/architecture
+projects, not correctness bugs.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

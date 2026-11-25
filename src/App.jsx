@@ -7,6 +7,7 @@ import ShortcutsOverlay from './components/ShortcutsOverlay';
 import Onboarding       from './components/Onboarding';
 import ShotView         from './components/ShotView';
 import Settings        from './components/Settings';
+import { pushBoardImage } from './utils/pendingImages';
 import {
   IconImage, IconPlay, IconWrite, IconSize, IconSun, IconMoon,
   IconHelp, IconClose, IconMini, IconExpand, IconPotato, IconDetach, IconUndock, IconBorderless,
@@ -145,6 +146,20 @@ function AppMain() {
     };
     document.addEventListener('click', h);
     return () => document.removeEventListener('click', h);
+  }, []);
+
+  // Capture / grab-frame always feed the Board sink, even before Board is visited.
+  useEffect(() => {
+    const onShot = (_, dataUrl) => pushBoardImage(dataUrl);
+    ipcRenderer.on('screenshot-result', onShot);
+    const ch = new BroadcastChannel('floatpad');
+    const onGrab = e => { if (e.data?.type === 'grab-frame') pushBoardImage(e.data.dataUrl); };
+    ch.addEventListener('message', onGrab);
+    return () => {
+      ipcRenderer.removeListener('screenshot-result', onShot);
+      ch.removeEventListener('message', onGrab);
+      ch.close();
+    };
   }, []);
 
   // Panel lifecycle: docking back or closing a panel returns the main window to that mode.

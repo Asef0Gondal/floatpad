@@ -137,34 +137,26 @@ pub fn win_resize(webview: Webview, state: State<'_, MiniState>, w: u32, h: u32)
 }
 
 #[tauri::command]
-pub async fn win_detach(app: AppHandle, on: bool) {
+pub async fn win_detach(webview: Webview, on: bool) {
     log::info!("win_detach: {on}");
-    if let Some(w) = main_win(&app) {
-        // shortcut: Tauri has no mouse-event forwarding ({forward:true} in v1); detached = fully click-through
-        let _ = w.set_ignore_cursor_events(on);
-    }
+    // shortcut: Tauri has no mouse-event forwarding; detached = fully click-through
+    let _ = webview.window().set_ignore_cursor_events(on);
 }
 
 /// PureRef-style "interactable wallpaper": stay below every other window.
 #[tauri::command]
-pub async fn win_always_bottom(app: AppHandle, on: bool) {
-    if let Some(w) = main_win(&app) {
-        if on {
-            let _ = w.set_always_on_top(false);
-        }
-        let _ = w.set_always_on_bottom(on);
-        if !on {
-            let _ = w.set_always_on_top(true);
-        }
-    }
+pub async fn win_always_bottom(webview: Webview, on: bool) {
+    let w = webview.window();
+    if on { let _ = w.set_always_on_top(false); }
+    let _ = w.set_always_on_bottom(on);
+    if !on { let _ = w.set_always_on_top(true); }
 }
 
 /// Lock the window in place so it can't be dragged accidentally (PureRef ⌘W).
 #[tauri::command]
-pub async fn win_lock(app: AppHandle, on: bool) {
-    if let Some(w) = main_win(&app) {
-        let _ = platform::set_movable(&w.as_ref().window(), !on);
-    }
+pub async fn win_lock(webview: Webview, on: bool) {
+    let w = webview.window();
+    let _ = platform::set_movable(&w, !on);
 }
 
 /// Reveal a local file in Finder / Explorer / the Linux file manager.
@@ -312,20 +304,21 @@ pub fn open_screenshot(app: &AppHandle) {
     if let Some(w) = app.get_webview_window("screenshot") {
         let _ = w.close();
     }
-    let (sw, sh) = main_win(app)
+    let (px, py, sw, sh) = main_win(app)
         .and_then(|w| w.current_monitor().ok().flatten())
         .map(|m| {
             let s = m.size().to_logical::<f64>(m.scale_factor());
-            (s.width, s.height)
+            let p = m.position().to_logical::<f64>(m.scale_factor());
+            (p.x, p.y, s.width, s.height)
         })
-        .unwrap_or((1440.0, 900.0));
+        .unwrap_or((0.0, 0.0, 1440.0, 900.0));
     let mut builder = WebviewWindowBuilder::new(app, "screenshot", WebviewUrl::App("screenshot.html".into()))
         .decorations(false)
         .transparent(true)
         .always_on_top(true)
         .skip_taskbar(true)
         .resizable(false)
-        .position(0.0, 0.0)
+        .position(px, py)
         .inner_size(sw, sh);
     if std::env::var("FP_SELFTEST").is_ok() {
         builder = builder.visible(false);
@@ -478,6 +471,9 @@ pub async fn web_create(
     }
     let win = app.get_window(&window).ok_or("window not found")?;
     let parsed = url.parse::<tauri::Url>().map_err(|e| e.to_string())?;
+    if !matches!(parsed.scheme(), "http" | "https") {
+        return Err("Web mode only loads http/https URLs".into());
+    }
     let scale = win.scale_factor().map_err(|e| e.to_string())?;
 
     let a1 = app.clone();
@@ -686,6 +682,30 @@ pub async fn list_md_files(dir: String) -> Result<Value, String> {
         }
         out.sort_by(|a, b| a["name"].as_str().unwrap_or("").cmp(b["name"].as_str().unwrap_or("")));
         Ok(Value::Array(out))
+    })
+    .await
+    .map_err(|e| e.to_string())?
+}
+
+/// Fetch a remote image and return a data: URL (avoids browser CORS). Keeps the
+/// Board's OCR/optimize/shot/crop/export working for URL-sourced images.
+#[tauri::command]
+pub async fn fetch_image_dataurl(url: String) -> Result<String, String> {
+    tauri::async_runtime::spawn_blocking(move || {
+        use std::io::Read;
+        if !url.starts_with("http://") && !url.starts_with("https://") {
+            return Err("only http/https".into());
+        }
+        let resp = ureq::get(&url)
+            .timeout(std::time::Duration::from_secs(15))
+            .call()
+            .map_err(|e| e.to_string())?;
+        let mime = resp.content_type().to_string();
+        if !mime.starts_with("image/") { return Err("not an image".into()); }
+        let mut bytes = Vec::new();
+        resp.into_reader().take(20_000_000).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+        use base64::Engine;
+        Ok(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(&bytes)))
     })
     .await
     .map_err(|e| e.to_string())?

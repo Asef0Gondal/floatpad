@@ -203,23 +203,23 @@ export default function Write({ active }) {
       setTimerLabel('25:00');
     } else {
       setTimerRunning(true);
-      timerRef.current = setInterval(() => {
-        setTimerSecs(s => {
-          const next = s - 1;
-          const m    = Math.floor(next / 60);
-          const sec  = next % 60;
-          setTimerLabel(`${m}:${sec.toString().padStart(2,'0')}`);
-          if (next <= 0) {
-            clearInterval(timerRef.current);
-            setTimerRunning(false);
-            setTimerSecs(25 * 60);
-            setTimerLabel('Done!');
-          }
-          return next;
-        });
-      }, 1000);
+      timerRef.current = setInterval(() => setTimerSecs(s => Math.max(0, s - 1)), 1000);
     }
   }, [timerRunning]);
+
+  // Derive the label / completion outside the state updater (no nested setState).
+  useEffect(() => {
+    if (!timerRunning) return;
+    if (timerSecs <= 0) {
+      clearInterval(timerRef.current);
+      setTimerRunning(false);
+      setTimerSecs(25 * 60);
+      setTimerLabel('Done!');
+    } else {
+      const m = Math.floor(timerSecs / 60), s = timerSecs % 60;
+      setTimerLabel(`${m}:${String(s).padStart(2, '0')}`);
+    }
+  }, [timerSecs, timerRunning]);
 
   useEffect(() => () => clearInterval(timerRef.current), []);
 
@@ -295,7 +295,7 @@ export default function Write({ active }) {
         <button className="tb-tool" onClick={pickFolder} title="Open a folder of .md notes">📁 Folder</button>
         {folder && (
           <button className={`tb-tool${showFiles?' active':''}`} onClick={()=>setShowFiles(s=>!s)} title="Browse folder files">
-            {currentFile ? currentFile.split('/').pop() : 'Files'} ▾
+            {currentFile ? currentFile.split(/[\\/]/).pop() : 'Files'} ▾
           </button>
         )}
 

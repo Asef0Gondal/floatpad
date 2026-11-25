@@ -209,7 +209,7 @@ export default function Browser({ active }) {
       const srcURL = params.srcURL || params.srcUrl || '';
       const linkURL = params.linkURL || params.linkUrl || '';
       const x = params.x ?? e.x ?? 0;
-      const y = (params.y ?? e.y ?? 0) + 36;
+      const y = (params.y ?? e.y ?? 0) + (hostRef.current?.offsetTop ?? 0);
       if (srcURL || linkURL) {
         setCtxMenu({ x, y, imgSrc: srcURL || null, linkUrl: linkURL || null });
       } else {
@@ -545,7 +545,7 @@ export default function Browser({ active }) {
       {ctxMenu && (
         <div
           className="ctx-menu"
-          style={{ left: ctxMenu.x, top: ctxMenu.y + 36 }}
+          style={{ left: ctxMenu.x, top: ctxMenu.y }}
           onMouseDown={e => e.stopPropagation()}
         >
           {ctxMenu.imgSrc && (

@@ -118,6 +118,7 @@ const RUST_INVOKE = {
   'web-destroy': ['web_destroy', (label) => ({ label })],
   'gif-frames': ['gif_frames', (dataUrl) => ({ dataUrl })],
   'image-optimize': ['image_optimize', (dataUrl, maxDim) => ({ dataUrl, maxDim })],
+  'fetch-image-dataurl': ['fetch_image_dataurl', (url) => ({ url })],
   'list-md-files': ['list_md_files', (dir) => ({ dir })],
   'board-autosave-write': ['autosave_board', (json) => ({ json })],
   'board-autosave-read': ['load_autosave_board', () => ({})],
@@ -144,7 +145,7 @@ function b64ToBytes(b64) {
   return a;
 }
 
-const listeners = new Map(); // handler → unlisten promise
+const listeners = new Map(); // channel → Map(handler → unlisten promise)
 
 export const ipcRenderer = {
   send(channel, ...args) {
@@ -163,12 +164,15 @@ export const ipcRenderer = {
     return invoke(entry[0], entry[1](...args));
   },
   on(channel, handler) {
-    listeners.set(handler, listen(channel, (e) => handler(null, e.payload)));
+    let m = listeners.get(channel);
+    if (!m) { m = new Map(); listeners.set(channel, m); }
+    m.set(handler, listen(channel, (e) => handler(null, e.payload)));
     return this;
   },
   removeListener(channel, handler) {
-    const p = listeners.get(handler);
-    if (p) { listeners.delete(handler); p.then((un) => un()); }
+    const m = listeners.get(channel);
+    const p = m && m.get(handler);
+    if (p) { m.delete(handler); p.then((un) => un()); }
     return this;
   },
 };

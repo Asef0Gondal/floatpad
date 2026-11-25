@@ -76,6 +76,7 @@
     "allow-shots-clear",
     "allow-board-autosave-clear",
     "allow-image-optimize",
-    "allow-list-md-files"
+    "allow-list-md-files",
+    "allow-fetch-image-dataurl"
   ]
 }

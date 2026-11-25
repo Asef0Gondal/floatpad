@@ -1,7 +1,7 @@
 {
   "name": "floatpad",
   "productName": "FloatPad",
-  "version": "2.9.13",
+  "version": "2.9.14",
   "description": "Lean always-on-top reference pad \u2014 board, video, web and write modes in one floating overlay. Native Rust/Tauri.",
   "author": "Asif Gondal",
   "license": "MIT",
@@ -23,7 +23,7 @@
   ],
   "scripts": {
     "dev:vite": "vite",
-    "start": "concurrently \"npm run dev:vite\" \"wait-on http://localhost:5173 && npm run dev:electron\"",
+    "start": "npm run dev",
     "build": "vite build",
     "dist:mac": "tauri build --bundles app,dmg",
     "dist:win": "tauri build --bundles nsis",
@@ -51,5 +51,6 @@
   },
   "engines": {
     "node": ">=18.0.0"
-  }
+  },
+  "type": "module"
 }

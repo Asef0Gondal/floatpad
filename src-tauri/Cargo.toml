@@ -1,6 +1,6 @@
 [package]
 name = "floatpad"
-version = "2.9.13"
+version = "2.9.14"
 description = "FloatPad — lean always-on-top reference pad"
 authors = ["Asif Gondal"]
 license = "MIT"
@@ -30,6 +30,7 @@ tauri-plugin-opener = "2.5.5"
 tauri-plugin-single-instance = "2.4.5"
 tokio = { version = "1.54.1", features = ["time"] }
 xcap = "0.9.10"
+ureq = "2"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 block2 = "0.6.2"
