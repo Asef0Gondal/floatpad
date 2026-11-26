@@ -703,7 +703,8 @@ pub async fn fetch_image_dataurl(url: String) -> Result<String, String> {
         let mime = resp.content_type().to_string();
         if !mime.starts_with("image/") { return Err("not an image".into()); }
         let mut bytes = Vec::new();
-        resp.into_reader().take(20_000_000).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+        resp.into_reader().take(20_000_001).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
+        if bytes.len() > 20_000_000 { return Err("image too large (>20 MB)".into()); }
         use base64::Engine;
         Ok(format!("data:{mime};base64,{}", base64::engine::general_purpose::STANDARD.encode(&bytes)))
     })

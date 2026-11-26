@@ -652,10 +652,12 @@ export default function ImageBoard({ active }) {
   // Receive screenshot / grab-frame images via the App-level sink (works even
   // if the Board mounts after the capture); drain anything queued pre-mount.
   useEffect(() => {
+    // Wait for the disk restore so a queued capture can't be overwritten by it.
+    if (!boardReady) return undefined;
     boardSink.add = url => addImage(url, null, null);
     boardSink.queue.splice(0).forEach(url => addImage(url, null, null));
     return () => { boardSink.add = null; };
-  }, [addImage]);
+  }, [addImage, boardReady]);
 
   const openDialog = useCallback(async () => {
     const paths = await ipcRenderer.invoke('dialog-open-images');

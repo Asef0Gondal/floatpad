@@ -564,6 +564,18 @@ re-render isolation, content-addressed image blobs for autosave/sync, export
 dot-pattern/rotation bounds, adblock anchor tightening. These are perf/architecture
 projects, not correctness bugs.
 
+## v2.9.15 — follow-up edge cases
+
+- boardSink drains only after boardReady (disk restore) so a queued capture can't
+  be overwritten by the restore's setImages.
+- fetch_image_dataurl reads take(20MB+1) and returns Err when >20MB instead of
+  silently storing a truncated image.
+
+SECURITY BACKLOG (future loop): web.json still grants untrusted web-* pages
+web_page_event / web_eval_result (sequential evalSeq), and tauri.conf csp:null.
+Next: scope per-window capabilities so child webviews can't call shell commands,
+randomize evalSeq, and set a CSP for the local shell.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning
