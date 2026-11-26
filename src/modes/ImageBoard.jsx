@@ -400,7 +400,12 @@ export default function ImageBoard({ active }) {
     } : i)));
     setCropTarget(null);
   };
-  const [gif, setGif] = useState(null); // {id, frames, idx, playing, speed}
+  const [gif, setGif] = useState(null); // {id, frames, playing, speed} (idx is ref-driven)
+  const gifDataRef = useRef(null);
+  const gifIdxRef = useRef(0);
+  const gifImgRef = useRef(null);
+  const gifCountRef = useRef(null);
+  const gifTimelineRef = useRef(null);
   const [commentEdit, setCommentEdit] = useState(null); // {id, text}
   const [boardReady, setBoardReady] = useState(false);
   const silentApply = useRef(false);
@@ -494,7 +499,11 @@ export default function ImageBoard({ active }) {
   useEffect(() => {
     if (!boardReady) return;
     if (silentApply.current) { silentApply.current = false; return; }
-    boardChannelRef.current?.postMessage({ type: 'state', source: boardId, images, notes, annotations });
+    // Debounce so rapid edits (pen/drag) coalesce into one multi-MB broadcast.
+    const t = setTimeout(() => {
+      boardChannelRef.current?.postMessage({ type: 'state', source: boardId, images, notes, annotations });
+    }, 120);
+    return () => clearTimeout(t);
   }, [images, notes, annotations, boardReady]);
 
   // Settings "clear board" resets the live board (command emits to all windows).
@@ -1255,30 +1264,51 @@ export default function ImageBoard({ active }) {
   const gifSelId = singleSelectedImage && isGif(singleSelectedImage) ? singleSelectedImage.id : null;
 
   useEffect(() => {
-    if (!gifSelId) { setGif(null); return undefined; }
+    if (!gifSelId) { gifDataRef.current = null; setGif(null); return undefined; }
     let cancelled = false;
     const img = imagesRef.current.find(i => i.id === gifSelId);
     if (!img) return undefined;
     ipcRenderer.invoke('gif-frames', img.src).then(frames => {
       if (!cancelled && Array.isArray(frames) && frames.length > 1) {
-        setGif({ id: gifSelId, frames, idx: 0, playing: true, speed: 1 });
+        gifIdxRef.current = 0; gifDataRef.current = { frames };
+        setGif({ id: gifSelId, frames, playing: true, speed: 1 });
       }
     }).catch(() => {});
     return () => { cancelled = true; };
   }, [gifSelId]);
 
+  // Paint the current frame straight to the DOM (no React re-render per frame).
+  const paintGif = useCallback(() => {
+    const g = gifDataRef.current; if (!g) return;
+    const f = g.frames[gifIdxRef.current];
+    if (gifImgRef.current && f) gifImgRef.current.src = f.dataUrl;
+    if (gifCountRef.current) gifCountRef.current.textContent = `${gifIdxRef.current + 1}/${g.frames.length}`;
+    if (gifTimelineRef.current) gifTimelineRef.current.value = String(gifIdxRef.current);
+  }, []);
+
+  useEffect(() => { gifIdxRef.current = 0; paintGif(); }, [gif?.id, paintGif]);
+
   useEffect(() => {
     if (!gif?.playing || !gif.frames.length) return undefined;
-    const delay = (gif.frames[gif.idx]?.delay || 100) / (gif.speed || 1);
-    const t = setTimeout(() => {
-      setGif(g => (g ? { ...g, idx: (g.idx + 1) % g.frames.length } : g));
-    }, delay);
+    let t;
+    const loop = () => {
+      const delay = (gif.frames[gifIdxRef.current]?.delay || 100) / (gif.speed || 1);
+      t = setTimeout(() => {
+        gifIdxRef.current = (gifIdxRef.current + 1) % gif.frames.length;
+        paintGif();
+        loop();
+      }, delay);
+    };
+    loop();
     return () => clearTimeout(t);
-  }, [gif]);
+  }, [gif?.playing, gif?.speed, gif?.id, gif?.frames, paintGif]);
 
   const gifStep = useCallback(dir => {
-    setGif(g => (g ? { ...g, playing: false, idx: (g.idx + dir + g.frames.length) % g.frames.length } : g));
-  }, []);
+    const g = gifDataRef.current; if (!g) return;
+    gifIdxRef.current = (gifIdxRef.current + dir + g.frames.length) % g.frames.length;
+    setGif(x => (x ? { ...x, playing: false } : x));
+    paintGif();
+  }, [paintGif]);
 
   // ── OCR + data detection (ScreenFloat parity, on any image) ──
   const runOcr = useCallback(async img => {
@@ -2081,7 +2111,8 @@ export default function ImageBoard({ active }) {
               )}
 
               <img
-                src={gif && gif.id === img.id ? (gif.frames[gif.idx]?.dataUrl || img.src) : img.src}
+                src={gif && gif.id === img.id ? (gif.frames[0]?.dataUrl || img.src) : img.src}
+                ref={gif && gif.id === img.id ? gifImgRef : undefined}
                 width={img.w}
                 height={img.h}
                 alt=""
@@ -2358,11 +2389,11 @@ export default function ImageBoard({ active }) {
             </button>
             <button className="focus-btn" onClick={() => gifStep(1)} title="Next frame">⏭</button>
             <input
-              type="range" className="gif-timeline" min="0" max={gif.frames.length - 1} value={gif.idx}
-              onChange={e => setGif(g => ({ ...g, playing: false, idx: Number(e.target.value) }))}
+              type="range" className="gif-timeline" min="0" max={gif.frames.length - 1} ref={gifTimelineRef}
+              onChange={e => { gifIdxRef.current = Number(e.target.value); setGif(g => ({ ...g, playing: false })); paintGif(); }}
               title="Frame timeline"
             />
-            <span className="focus-count">{gif.idx + 1}/{gif.frames.length}</span>
+            <span className="focus-count" ref={gifCountRef}>1/{gif.frames.length}</span>
             <select
               className="gif-speed" value={gif.speed}
               onChange={e => setGif(g => ({ ...g, speed: Number(e.target.value) }))}
@@ -2372,7 +2403,7 @@ export default function ImageBoard({ active }) {
             </select>
             <button
               className="focus-btn"
-              onClick={() => addImage(gif.frames[gif.idx].dataUrl, null, null)}
+              onClick={() => addImage(gif.frames[gifIdxRef.current].dataUrl, null, null)}
               title="Copy this frame onto the board as a still"
             >
               ⊡ Frame

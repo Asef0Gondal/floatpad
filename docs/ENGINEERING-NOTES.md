@@ -594,6 +594,20 @@ Backlog: content-addressed blobs, GIF re-render isolation, monolith split, webvi
 event-driven bounds, CSP, per-window shot capability, CI clippy/fmt, cross-platform
 parity, ureq native-tls + React.lazy.
 
+## v2.9.17 — GIF isolation + sync debounce + shots ID sequence
+
+- GIF playback is now ref-driven: the frame tick writes img.src / timeline / count
+  straight to the DOM (no per-frame setState), so selecting a GIF no longer
+  re-renders the whole board at 20-50ms. Play/pause/speed/seek remain state (rare).
+- BroadcastChannel board sync debounced 120ms so rapid pen/drag edits coalesce into
+  one multi-MB broadcast instead of one per stroke.
+- shots ID adds an AtomicU64 sequence suffix (same-ms batch saves collision-free).
+
+Note: undo snapshots already SHARE base64 string references (JS strings immutable),
+so the undo heap is not 100x image data; the real stall was per-edit JSON.stringify,
+now reduced by the sync debounce + GIF isolation. Content-addressed disk blobs +
+monolith split remain the next dedicated loop.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

@@ -16,6 +16,7 @@ pub struct ShotMeta {
 }
 
 static SHOTS_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+static SHOT_SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
 
 fn shots_dir(app: &AppHandle) -> Result<PathBuf, String> {
     let dir = app.path().app_data_dir().map_err(|e| e.to_string())?.join("shots");
@@ -85,7 +86,7 @@ pub fn save(app: &AppHandle, data_url: &str, name: &str, tags: Vec<String>) -> R
     let (bytes, ext) = decode_image(data_url)?;
     let _guard = SHOTS_LOCK.lock().unwrap(); // id + index under one lock (no same-ms collision)
     let dir = shots_dir(app)?;
-    let id = format!("{}-{}", now_ms(), std::process::id());
+    let id = format!("{}-{}-{}", now_ms(), std::process::id(), SHOT_SEQ.fetch_add(1, std::sync::atomic::Ordering::SeqCst));
     let img_path = dir.join(format!("{id}.{ext}"));
     std::fs::write(&img_path, &bytes).map_err(|e| e.to_string())?;
 
