@@ -608,6 +608,15 @@ so the undo heap is not 100x image data; the real stall was per-edit JSON.string
 now reduced by the sync debounce + GIF isolation. Content-addressed disk blobs +
 monolith split remain the next dedicated loop.
 
+## v2.9.18 — a11y / light theme / CI gates
+
+- Contrast: --fp-text-dim/faint raised to readable ratios on both themes.
+- Light theme: focus-bar / ocr-panel / grab-handle / shot-view / chips re-colored via
+  theme vars (were hardcoded dark).
+- Titlebar tooltips moved below the bar (were clipping off-screen above).
+- Restored :focus-visible ring over the outline:none input rules (keyboard a11y).
+- CI: added cargo clippy step; Release workflow now gates on npm test + cargo test.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

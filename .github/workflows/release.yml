@@ -42,6 +42,13 @@ jobs:
           cache: 'npm'
       - run: npm ci
 
+      # Gate the release on the test suites
+      - run: npm run build
+      - run: npm test
+      - name: cargo test
+        working-directory: src-tauri
+        run: cargo test --lib
+
       - name: Build and publish bundles
         uses: tauri-apps/tauri-action@v0
         env:

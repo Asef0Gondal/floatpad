@@ -9,8 +9,8 @@
   --fp-border-mid: #2E3240;
   --fp-border-hi: #3A3F4E;
   --fp-text: #C8D0E0;
-  --fp-text-dim: #6B7385;
-  --fp-text-faint: #3A3F4C;
+  --fp-text-dim: #9AA3B8;
+  --fp-text-faint: #7A8296;
   --fp-text-inverse: #0E1015;
   --fp-accent: #3B6EE0;
   --fp-accent-dim: #1E3A6E;
@@ -41,8 +41,8 @@
   --fp-border-mid: #BDB9B0;
   --fp-border-hi: #AEAAA0;
   --fp-text: #1A1C22;
-  --fp-text-dim: #6B6860;
-  --fp-text-faint: #AEABA4;
+  --fp-text-dim: #57544C;
+  --fp-text-faint: #6E6B64;
   --fp-text-inverse: #F2F0EC;
   --fp-accent: #2D5ABF;
   --fp-accent-dim: #C8D8F4;
@@ -309,7 +309,7 @@ textarea { -webkit-user-select:text; user-select:text; }
 .tb-close[title]:hover::after {
   content:     attr(title);
   position:    absolute;
-  bottom:      calc(100% + 6px);
+  top:         calc(100% + 6px);
   left:        50%; transform:translateX(-50%);
   background:  var(--fp-bg-raised);
   border:      1px solid var(--fp-border-mid);
@@ -1498,3 +1498,15 @@ input[type="range"], input[type="checkbox"], input[type="color"] { cursor: defau
 .crop-ne, .crop-sw { cursor: nesw-resize !important; }
 
 .panel-resize-grip{position:fixed;bottom:0;right:0;width:18px;height:18px;z-index:60;cursor:se-resize !important;background:linear-gradient(135deg,transparent 0 50%,var(--fp-border-mid) 50% 60%,transparent 60% 70%,var(--fp-border-mid) 70% 80%,transparent 80%);}
+
+input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-visible { outline: 2px solid var(--fp-accent); outline-offset: 1px; }
+
+:root[data-theme="light"] .focus-bar, :root[data-theme="light"] .ocr-panel,
+:root[data-theme="light"] .grab-handle, :root[data-theme="light"] .shot-view {
+  background: var(--fp-bg-raised); border-color: var(--fp-border-mid); color: var(--fp-text);
+}
+:root[data-theme="light"] .focus-btn, :root[data-theme="light"] .ocr-close,
+:root[data-theme="light"] .focus-count, :root[data-theme="light"] .gif-speed { color: var(--fp-text-dim); }
+:root[data-theme="light"] .focus-btn:hover { background: var(--fp-bg-hover); }
+:root[data-theme="light"] .ocr-head { color: var(--fp-text); border-color: var(--fp-border); }
+:root[data-theme="light"] .ocr-chip { background: var(--fp-bg-hover); border-color: var(--fp-border-mid); color: var(--fp-text-dim); }
