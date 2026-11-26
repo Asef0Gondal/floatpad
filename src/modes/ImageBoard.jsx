@@ -180,12 +180,15 @@ function getBoardBounds(images, notes, annotations) {
   let bounds = null;
 
   for (const img of images) {
-    bounds = expandBounds(bounds, {
-      minX: img.x,
-      minY: img.y,
-      maxX: img.x + img.w,
-      maxY: img.y + img.h,
-    });
+    // Rotated (90/270) images swap their axis-aligned footprint.
+    const rot = ((img.rotation || 0) % 360 + 360) % 360;
+    let minX = img.x, minY = img.y, maxX = img.x + img.w, maxY = img.y + img.h;
+    if (rot === 90 || rot === 270) {
+      const cx = img.x + img.w / 2, cy = img.y + img.h / 2;
+      minX = cx - img.h / 2; maxX = cx + img.h / 2;
+      minY = cy - img.w / 2; maxY = cy + img.w / 2;
+    }
+    bounds = expandBounds(bounds, { minX, minY, maxX, maxY });
   }
 
   for (const note of notes) {
@@ -474,6 +477,7 @@ export default function ImageBoard({ active }) {
       }
       if (msg.type === 'state') {
         silentApply.current = true;
+        restoringRef.current = true; // peer edits don't pollute local undo
         const imgs = (msg.images || []).map(normalizeImageModel);
         setImages(imgs);
         setNotes(msg.notes || []);
@@ -497,6 +501,7 @@ export default function ImageBoard({ active }) {
   useEffect(() => {
     const onCleared = () => {
       silentApply.current = true;
+      historyRef.current = null; // Cmd+Z must not resurrect a cleared board
       setImages([]); setNotes([]); setAnnotations([]);
       setSelected(new Set());
     };
@@ -1384,14 +1389,13 @@ export default function ImageBoard({ active }) {
     ctx.fillStyle = bg;
     ctx.fillRect(0, 0, canvas.width, canvas.height);
 
-    ctx.fillStyle = dot;
-    for (let x = 0; x < canvas.width; x += 22) {
-      for (let y = 0; y < canvas.height; y += 22) {
-        ctx.beginPath();
-        ctx.arc(x + 1, y + 1, 1, 0, Math.PI * 2);
-        ctx.fill();
-      }
-    }
+    const tile = document.createElement('canvas');
+    tile.width = 22; tile.height = 22;
+    const tctx = tile.getContext('2d');
+    tctx.fillStyle = dot;
+    tctx.beginPath(); tctx.arc(1, 1, 1, 0, Math.PI * 2); tctx.fill();
+    ctx.fillStyle = ctx.createPattern(tile, 'repeat');
+    ctx.fillRect(0, 0, canvas.width, canvas.height);
 
     const orderedImages = [...imagesRef.current].sort((a, b) => (a.z ?? 0) - (b.z ?? 0));
     for (const image of orderedImages) {

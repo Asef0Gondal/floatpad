@@ -5,7 +5,7 @@
 <style>
 * { margin:0; padding:0; box-sizing:border-box; }
 html,body { width:100vw; height:100vh; overflow:hidden; background:transparent; cursor:crosshair; }
-#canvas  { position:absolute; inset:0; }
+#canvas  { position:absolute; inset:0; width:100%; height:100%; }
 #sel {
   position:absolute; display:none; pointer-events:none;
   border:1.5px solid #4a90e2;
@@ -52,7 +52,7 @@ let bgLoaded = false;
 // ── Capture screen via main process (desktopCapturer lives there in Electron 16+) ──
 async function captureScreen() {
   const dataUrl = await ipcRenderer.invoke('capture-screen');
-  if (!dataUrl) return;
+  if (!dataUrl) { sizeEl.textContent = 'Screen Recording permission required'; return; }
   const img = new Image();
   img.onload = () => {
     const dpr = window.devicePixelRatio || 1;
@@ -67,8 +67,8 @@ captureScreen();
 
 document.addEventListener('mousedown', e => {
   startX=e.clientX; startY=e.clientY; dragging=true;
-  sel.style.display='block';
   rect={x:startX,y:startY,w:0,h:0};
+  sel.style.cssText=`display:block;left:${startX}px;top:${startY}px;width:0px;height:0px;`;
 });
 
 document.addEventListener('mousemove', e => {
@@ -90,13 +90,14 @@ document.addEventListener('keydown', e => {
 });
 
 function capture() {
+  if (!bgLoaded) return;
   const dpr = window.devicePixelRatio || 1;
   const tmp = document.createElement('canvas');
   tmp.width  = Math.round(rect.w * dpr);
   tmp.height = Math.round(rect.h * dpr);
   tmp.getContext('2d').drawImage(
     canvas,
-    rect.x * dpr, rect.y * dpr, rect.w * dpr, rect.h * dpr,
+    Math.round(rect.x * dpr), Math.round(rect.y * dpr), Math.round(rect.w * dpr), Math.round(rect.h * dpr),
     0, 0, tmp.width, tmp.height
   );
   ipcRenderer.send('screenshot-done', tmp.toDataURL('image/png'));

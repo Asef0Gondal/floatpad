@@ -576,6 +576,24 @@ web_page_event / web_eval_result (sequential evalSeq), and tauri.conf csp:null.
 Next: scope per-window capabilities so child webviews can't call shell commands,
 randomize evalSeq, and set a CSP for the local shell.
 
+## v2.9.16 — swarm-audit batch (correctness/security/perf/UX)
+
+Fixed: screenshot canvas CSS 100% + bgLoaded guard + sel reset + rounded crop;
+win_detach Focused(true) only; image codecs jpeg/webp (optimize/thumbs work on JPEG);
+Write abort-on-null read + preview link open-external + honest autosave status;
+Board remote edits don't pollute undo + clear resets history; Rust autosave/clear
+mutex; capture_webview_rect zero guard; shots id under lock; fetch SSRF (private/
+loopback reject, no redirects, raster-only); web_eval/page_event emit_to + URL
+sanitize + randomized eval ids; adblock load-on-main (no UAF) + init apply-live;
+ScrollToolbar MutationObserver (no per-render reflow); Write markdown gated on
+preview+md; export dot CanvasPattern + rotation-aware bounds; statusbar order;
+borderless titlebar visibility (no invisible tab stops); Video A/B keys + wmv;
+ErrorBoundary.
+
+Backlog: content-addressed blobs, GIF re-render isolation, monolith split, webview
+event-driven bounds, CSP, per-window shot capability, CI clippy/fmt, cross-platform
+parity, ureq native-tls + React.lazy.
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

@@ -52,14 +52,15 @@ export default function Write({ active }) {
   const [files,        setFiles]        = useState([]);
   const [currentFile,  setCurrentFile]  = useState(null);
   const [showFiles,    setShowFiles]    = useState(false);
+  const [saveOk,       setSaveOk]       = useState(true);
   const previewRef = useRef(null);
 
   useEffect(() => { localStorage.setItem('fp_write_preview', preview ? '1' : '0'); }, [preview]);
 
   // Live Markdown (Markraft/Tot parity) — sanitized, GFM tables + task lists
   const rendered = useMemo(
-    () => DOMPurify.sanitize(marked.parse(content || '')),
-    [content]
+    () => (preview && writeMode === 'md') ? DOMPurify.sanitize(marked.parse(content || '')) : '',
+    [content, preview, writeMode]
   );
 
   // Click a task checkbox in preview → flip the nth [ ]/[x] in the source
@@ -79,8 +80,8 @@ export default function Write({ active }) {
   // ── Autosave ──────────────────────────────────────────────
   useEffect(() => {
     const save = () => {
-      if (currentFile) ipcRenderer.invoke('file-write', currentFile, content).catch(() => {});
-      else { try { localStorage.setItem(AUTOSAVE_KEY, content); } catch {} }
+      if (currentFile) ipcRenderer.invoke('file-write', currentFile, content).then(ok => setSaveOk(ok !== false)).catch(() => setSaveOk(false));
+      else { try { localStorage.setItem(AUTOSAVE_KEY, content); setSaveOk(true); } catch { setSaveOk(false); } }
     };
     const t = setTimeout(save, 600);
     const onVis = () => { if (document.visibilityState === 'hidden') save(); };
@@ -178,7 +179,8 @@ export default function Write({ active }) {
   const openMdFile = useCallback(async path => {
     if (currentFile && currentFile !== path) await flushCurrentFile();
     const text = await ipcRenderer.invoke('file-read-text', path);
-    setContent(text ?? '');
+    if (text === null) return; // failed read: don't clobber the file with empty
+    setContent(text);
     setCurrentFile(path);
     setWriteMode('md');
     setShowFiles(false);
@@ -322,6 +324,10 @@ export default function Write({ active }) {
           <div
             ref={previewRef}
             className="write-preview"
+            onClick={e => {
+              const a = e.target.closest('a');
+              if (a && a.href) { e.preventDefault(); ipcRenderer.invoke('open-external', a.href); }
+            }}
             dangerouslySetInnerHTML={{ __html: rendered }}
           />
         ) : (
@@ -351,7 +357,7 @@ export default function Write({ active }) {
         <div className="write-stat">{content.length.toLocaleString()} chars</div>
         <div className="write-stat-sep"/>
         <div className="write-stat" style={{color:'var(--fp-text-faint)',fontSize:9}}>
-          autosaved
+          {saveOk ? 'autosaved' : 'save failed'}
         </div>
 
         {/* Focus timer */}

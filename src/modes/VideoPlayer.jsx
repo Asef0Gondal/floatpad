@@ -112,6 +112,8 @@ export default function VideoPlayer({ active, potato }) {
         case 'ArrowUp':    e.preventDefault(); v.volume = Math.min(1, v.volume + 0.05); setVolume(v.volume); break;
         case 'ArrowDown':  e.preventDefault(); v.volume = Math.max(0, v.volume - 0.05); setVolume(v.volume); break;
         case 'KeyM':       v.muted = !v.muted; setMuted(v.muted); break;
+        case 'KeyA':       { const t=v.currentTime; abRef.current.a=t; setAbA(t); break; }
+        case 'KeyB':       { const t=v.currentTime; abRef.current.b=t; setAbB(t); break; }
         case 'Comma':      e.preventDefault(); v.pause(); v.currentTime = Math.max(0, v.currentTime - 1/30); break;
         case 'Period':     e.preventDefault(); v.pause(); v.currentTime = Math.min(safeDur(v), v.currentTime + 1/30); break;
         default: break;
@@ -192,7 +194,7 @@ export default function VideoPlayer({ active, potato }) {
   const onDragOver  = e => e.preventDefault();
   const onDrop = e => {
     e.preventDefault(); setDragOver(false);
-    const f = [...e.dataTransfer.files].find(f => f.type.startsWith('video/') || /\.(mp4|mov|mkv|avi|webm|m4v|flv|ogv)$/i.test(f.name));
+    const f = [...e.dataTransfer.files].find(f => f.type.startsWith('video/') || /\.(mp4|mov|mkv|avi|webm|m4v|flv|ogv|wmv)$/i.test(f.name));
     if (f) loadSrc(URL.createObjectURL(f));
   };
 

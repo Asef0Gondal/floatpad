@@ -5,11 +5,12 @@ import { listen } from '@tauri-apps/api/event';
 import { getCurrentWindow } from '@tauri-apps/api/window';
 
 let evalSeq = 0;
+const nextEvalId = () => { evalSeq = (evalSeq + 1 + Math.floor(Math.random() * 0xFFFF)) >>> 0; return evalSeq; };
 
 /** One-shot executeJavaScript against any app webview, with result (scraping etc.). */
 export function evalInWebview(label, script, timeoutMs = 12000) {
   return new Promise((resolve, reject) => {
-    const id = ++evalSeq;
+    const id = nextEvalId();
     let un = null;
     let settled = false;
     const finish = (fn, arg) => { if (!settled) { settled = true; un?.(); fn(arg); } };
@@ -127,7 +128,7 @@ export function createTauriWebview({ host, url }) {
     reload() { emit('did-start-loading', {}); evalInPage('location.reload()'); },
     stop() { evalInPage('window.stop()'); },
     executeJavaScript(script) {
-      const id = ++evalSeq;
+      const id = nextEvalId();
       return new Promise((resolve, reject) => {
         evalCbs.set(id, { resolve, reject });
         const wrapped = `(async () => { try { const r = await eval(${JSON.stringify(script)}); window.__TAURI_INTERNALS__.invoke('web_eval_result', { id: ${id}, result: JSON.stringify(r === undefined ? null : r) }); } catch (e) { try { window.__TAURI_INTERNALS__.invoke('web_eval_result', { id: ${id}, error: String((e && e.message) || e) }); } catch {} } })();`;

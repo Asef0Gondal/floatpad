@@ -187,7 +187,7 @@ pub fn run() {
                     api.prevent_close(); // tray keeps the app alive
                     let _ = w2.hide();
                 }
-                WindowEvent::Focused(_) => {
+                WindowEvent::Focused(true) => {
                     let _ = w2.set_ignore_cursor_events(false);
                     let _ = h.emit_to("main", "detach-cleared", ());
                 }

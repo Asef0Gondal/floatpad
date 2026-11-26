@@ -130,7 +130,7 @@ mod imp {
 
     /// Compile once at startup with the persisted allowlist.
     pub fn init(app: &AppHandle, allowed: Vec<String>) {
-        compile(app, allowed, false);
+        compile(app, allowed, true); // apply to web-* created during compile too
     }
 
     /// Recompile after an allowlist change and update live webviews.
@@ -142,16 +142,16 @@ mod imp {
     /// WebviewBuilder::with_webview_configuration. Constructed on the main
     /// thread, shuttled back as a raw pointer (Retained is !Send).
     pub fn make_configuration(app: &AppHandle) -> Option<Retained<WKWebViewConfiguration>> {
-        let ptr = RULE_LIST.load(Ordering::SeqCst);
-        if ptr == 0 {
-            return None;
-        }
         let (tx, rx) = std::sync::mpsc::channel::<usize>();
         let _ = app.run_on_main_thread(move || unsafe {
             let Some(mtm) = MainThreadMarker::new() else {
                 let _ = tx.send(0);
                 return;
             };
+            // Load on the main thread (same thread as store_list) so a concurrent
+            // refresh can't drop the list between load and retain.
+            let ptr = RULE_LIST.load(Ordering::SeqCst);
+            if ptr == 0 { let _ = tx.send(0); return; }
             let config = WKWebViewConfiguration::new(mtm);
             if let Some(list) = Retained::retain(ptr as *mut WKContentRuleList) {
                 config.userContentController().addContentRuleList(&list);

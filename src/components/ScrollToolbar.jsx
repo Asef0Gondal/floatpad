@@ -1,4 +1,4 @@
-import React, { useRef, useState, useEffect, useLayoutEffect, useCallback } from 'react';
+import React, { useRef, useState, useEffect, useCallback } from 'react';
 
 // A horizontally scrollable mode toolbar with explicit left/right buttons so
 // mouse users (no trackpad swipe) can reach overflow tools. Buttons appear only
@@ -29,11 +29,14 @@ export default function ScrollToolbar({ className = '', children }) {
     el.addEventListener('wheel', onWheel, { passive: false });
     const ro = new ResizeObserver(update);
     ro.observe(el);
+    const mo = new MutationObserver(update);
+    mo.observe(el, { childList: true, subtree: true });
     window.addEventListener('resize', update);
     return () => {
       el.removeEventListener('scroll', update);
       el.removeEventListener('wheel', onWheel);
       ro.disconnect();
+      mo.disconnect();
       window.removeEventListener('resize', update);
     };
   }, [update]);
@@ -41,7 +44,6 @@ export default function ScrollToolbar({ className = '', children }) {
   // Content changes (e.g. selecting images adds tool buttons) alter scrollWidth
   // without resizing the box, so the ResizeObserver misses them. Re-check after
   // every render; setState bails out when the values are unchanged.
-  useLayoutEffect(() => { update(); });
 
   const scroll = dir => ref.current?.scrollBy({ left: dir * 180, behavior: 'smooth' });
 

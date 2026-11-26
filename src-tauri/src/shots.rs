@@ -83,6 +83,7 @@ fn decode_image(data_url: &str) -> Result<(Vec<u8>, &'static str), String> {
 /// Save a shot image + thumbnail + metadata. Returns the metadata.
 pub fn save(app: &AppHandle, data_url: &str, name: &str, tags: Vec<String>) -> Result<ShotMeta, String> {
     let (bytes, ext) = decode_image(data_url)?;
+    let _guard = SHOTS_LOCK.lock().unwrap(); // id + index under one lock (no same-ms collision)
     let dir = shots_dir(app)?;
     let id = format!("{}-{}", now_ms(), std::process::id());
     let img_path = dir.join(format!("{id}.{ext}"));
@@ -101,7 +102,6 @@ pub fn save(app: &AppHandle, data_url: &str, name: &str, tags: Vec<String>) -> R
         created: now_ms(),
         ext: ext.into(),
     };
-    let _guard = SHOTS_LOCK.lock().unwrap();
     let mut index = load_index(app);
     index.insert(0, meta.clone());
     save_index(app, &index)?;

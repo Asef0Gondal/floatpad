@@ -1,6 +1,6 @@
 [package]
 name = "floatpad"
-version = "2.9.15"
+version = "2.9.16"
 description = "FloatPad — lean always-on-top reference pad"
 authors = ["Asif Gondal"]
 license = "MIT"
@@ -17,7 +17,7 @@ tauri-build = { version = "2.7.6", features = [] }
 [dependencies]
 base64 = "0.23.1"
 env_logger = "0.11.12"
-image = { version = "0.25.10", default-features = false, features = ["gif", "png"] }
+image = { version = "0.25.10", default-features = false, features = ["gif", "png", "jpeg", "webp"] }
 log = "0.4.35"
 serde = { version = "1.0.229", features = ["derive"] }
 serde_json = "1.0.154"

@@ -88,10 +88,13 @@ fn autosave_path(app: &AppHandle) -> Option<PathBuf> {
     app.path().app_data_dir().ok().map(|d| d.join("board-autosave.json"))
 }
 
+static BOARD_LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
+
 #[tauri::command]
 pub async fn autosave_board(app: AppHandle, json: String) -> Result<(), String> {
     let path = autosave_path(&app).ok_or("no app data dir")?;
     tauri::async_runtime::spawn_blocking(move || {
+        let _g = BOARD_LOCK.lock().unwrap();
         if let Some(dir) = path.parent() {
             std::fs::create_dir_all(dir).map_err(|e| e.to_string())?;
         }
@@ -398,6 +401,7 @@ pub async fn capture_webview_rect(app: AppHandle, label: String, rect: Rect) -> 
     let my = monitor.y().ok()?;
     let mw = monitor.width().ok()?;
     let mh = monitor.height().ok()?;
+    if mw == 0 || mh == 0 { return None; }
     // clamp to the monitor so partially off-screen webviews still capture
     let cx = (x - mx).clamp(0, mw as i32 - 1) as u32;
     let cy = (y - my).clamp(0, mh as i32 - 1) as u32;
@@ -639,6 +643,7 @@ pub fn shot_payload(webview: Webview, payloads: State<'_, ShotPayloads>) -> Opti
 /// Delete the board autosave file (Settings → clear saved board).
 #[tauri::command]
 pub async fn board_autosave_clear(app: AppHandle) -> Result<(), String> {
+    let _g = BOARD_LOCK.lock().unwrap();
     if let Some(path) = autosave_path(&app) {
         let _ = std::fs::remove_file(path);
     }
@@ -696,12 +701,23 @@ pub async fn fetch_image_dataurl(url: String) -> Result<String, String> {
         if !url.starts_with("http://") && !url.starts_with("https://") {
             return Err("only http/https".into());
         }
-        let resp = ureq::get(&url)
+        let parsed = tauri::Url::parse(&url).map_err(|e| e.to_string())?;
+        let host = parsed.host_str().unwrap_or("").to_lowercase();
+        if host == "localhost" || host.ends_with(".local") { return Err("private host".into()); }
+        if let Ok(ip) = host.parse::<std::net::IpAddr>() {
+            let private = match ip {
+                std::net::IpAddr::V4(v4) => v4.is_loopback() || v4.is_private() || v4.is_link_local() || v4.is_unspecified(),
+                std::net::IpAddr::V6(v6) => v6.is_loopback() || v6.is_unspecified(),
+            };
+            if private { return Err("private address".into()); }
+        }
+        let resp = ureq::AgentBuilder::new().redirects(0).build()
+            .get(&url)
             .timeout(std::time::Duration::from_secs(15))
             .call()
             .map_err(|e| e.to_string())?;
         let mime = resp.content_type().to_string();
-        if !mime.starts_with("image/") { return Err("not an image".into()); }
+        if !mime.starts_with("image/") || mime.contains("svg") { return Err("only raster images allowed".into()); }
         let mut bytes = Vec::new();
         resp.into_reader().take(20_000_001).read_to_end(&mut bytes).map_err(|e| e.to_string())?;
         if bytes.len() > 20_000_000 { return Err("image too large (>20 MB)".into()); }
@@ -782,7 +798,8 @@ pub async fn web_eval_result(
     result: Option<String>,
     error: Option<String>,
 ) {
-    let _ = webview.window().emit(
+    let _ = webview.window().emit_to(
+        webview.window().label(),
         "web-eval-result",
         json!({ "id": id, "result": result, "error": error }),
     );
@@ -793,5 +810,10 @@ pub async fn web_eval_result(
 pub async fn web_page_event(webview: Webview, payload: Value) {
     let mut p = payload.as_object().cloned().unwrap_or_default();
     p.insert("label".into(), json!(webview.label()));
-    let _ = webview.window().emit("web-event", Value::Object(p));
+    for key in ["url", "imgSrc", "linkUrl"] {
+        if let Some(u) = p.get(key).and_then(|v| v.as_str()) {
+            if !u.starts_with("http://") && !u.starts_with("https://") { p.insert(key.into(), json!("")); }
+        }
+    }
+    let _ = webview.window().emit_to(webview.window().label(), "web-event", Value::Object(p));
 }
