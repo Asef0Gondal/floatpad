@@ -85,7 +85,7 @@ export function createTauriWebview({ host, url }) {
     if (!created || destroyed || !host.isConnected) return;
     // A native WKWebView subview paints ABOVE the host DOM (incl. <dialog> top
     // layer), so hide it while any modal is open or it would obscure the dialog.
-    if (document.querySelector('dialog[open]')) {
+    if (document.querySelector('dialog[open]') || document.querySelector('.ctx-menu')) {
       if (lastBounds !== null) { invoke('web_hide', { label }).catch(() => {}); lastBounds = null; }
       return;
     }

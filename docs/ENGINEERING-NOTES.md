@@ -617,6 +617,15 @@ monolith split remain the next dedicated loop.
 - Restored :focus-visible ring over the outline:none input rules (keyboard a11y).
 - CI: added cargo clippy step; Release workflow now gates on npm test + cargo test.
 
+## v2.9.19 — review follow-ups
+
+Light theme: ocr-text/error, gif-speed, hist-empty/clear re-colored. GIF: clear stale
+on A->B switch + close, timeline defaultValue 0. shot-edit input focus ring restored.
+Panel unmount flushes final sync (debounce gap). Tooltips suppressed inside menus.
+scrapeUrl: unique label + await listen before create (no race). page.js suppresses
+native ctx menu for img/link; webview hidden while .ctx-menu open. Potato mode keeps
+A-B loop via 250ms interval (cleaned on eject/unmount).
+
 ## Deliberate decisions
 
 - **Bundle identifier stays `com.floatpad.app`** despite the tauri warning

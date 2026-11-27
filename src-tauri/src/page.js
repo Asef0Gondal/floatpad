@@ -22,6 +22,7 @@
     const t = e.target;
     const img = t && t.closest ? t.closest('img') : null;
     const a = t && t.closest ? t.closest('a') : null;
+    if (img || a) e.preventDefault();
     report({ kind: 'ctx', x: e.clientX, y: e.clientY, srcUrl: img ? img.src : '', linkUrl: a ? a.href : '' });
   }, true);
 

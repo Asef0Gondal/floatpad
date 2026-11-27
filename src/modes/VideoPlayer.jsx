@@ -7,6 +7,7 @@ export default function VideoPlayer({ active, potato }) {
   const vidRef   = useRef(null);
   const seekRef  = useRef(null);
   const abRef    = useRef({ a: null, b: null });
+  const potatoTickRef = useRef(null);
   const rafRef   = useRef(null);
 
   const [loaded,    setLoaded]    = useState(false);
@@ -34,12 +35,16 @@ export default function VideoPlayer({ active, potato }) {
     }
     const { a, b } = abRef.current;
     if (a !== null && b !== null && v.currentTime >= b) v.currentTime = a;
-    if (!v.paused) rafRef.current = requestAnimationFrame(tick);
-  }, []);
+    if (!v.paused && !potato) rafRef.current = requestAnimationFrame(tick);
+  }, [potato]);
+
+  useEffect(() => () => { cancelAnimationFrame(rafRef.current); clearInterval(potatoTickRef.current); }, []);
 
   const startTick = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
-    if (!potato) rafRef.current = requestAnimationFrame(tick);
+    clearInterval(potatoTickRef.current);
+    if (potato) potatoTickRef.current = setInterval(tick, 250); // keep A-B loop in potato mode
+    else rafRef.current = requestAnimationFrame(tick);
   }, [tick, potato]);
 
   // ── Load ─────────────────────────────────────────────────
@@ -57,6 +62,7 @@ export default function VideoPlayer({ active, potato }) {
 
   const eject = useCallback(() => {
     cancelAnimationFrame(rafRef.current);
+    clearInterval(potatoTickRef.current);
     if (blobRef.current) { URL.revokeObjectURL(blobRef.current); blobRef.current = null; }
     const v = vidRef.current;
     if (!v) return;

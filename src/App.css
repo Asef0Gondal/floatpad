@@ -1363,7 +1363,7 @@ kbd {
 }
 .shot-edit input {
   flex: 1; background: var(--fp-bg); border: 1px solid var(--fp-border-mid);
-  border-radius: 6px; color: var(--fp-text); padding: 5px 8px; font-size: 12px; outline: none;
+  border-radius: 6px; color: var(--fp-text); padding: 5px 8px; font-size: 12px;
 }
 .shot-edit button {
   background: var(--fp-accent-dim); border: 1px solid var(--fp-border-mid);
@@ -1510,3 +1510,11 @@ input:focus-visible, textarea:focus-visible, select:focus-visible, button:focus-
 :root[data-theme="light"] .focus-btn:hover { background: var(--fp-bg-hover); }
 :root[data-theme="light"] .ocr-head { color: var(--fp-text); border-color: var(--fp-border); }
 :root[data-theme="light"] .ocr-chip { background: var(--fp-bg-hover); border-color: var(--fp-border-mid); color: var(--fp-text-dim); }
+
+:root[data-theme="light"] .ocr-text { color: var(--fp-text); }
+:root[data-theme="light"] .ocr-error { color: var(--fp-danger); }
+:root[data-theme="light"] .gif-speed { background: var(--fp-bg-hover); border-color: var(--fp-border-mid); }
+:root[data-theme="light"] .hist-empty { color: var(--fp-text-faint); }
+:root[data-theme="light"] .hist-clear { color: var(--fp-text-dim); border-color: var(--fp-border-mid); }
+:root[data-theme="light"] .hist-clear:hover { color: var(--fp-text); }
+.tb-more-menu .tb-btn[title]:hover::after, .tb-menu .tb-btn[title]:hover::after { display: none; }

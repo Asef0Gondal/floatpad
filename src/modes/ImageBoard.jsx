@@ -506,6 +506,15 @@ export default function ImageBoard({ active }) {
     return () => clearTimeout(t);
   }, [images, notes, annotations, boardReady]);
 
+  // Flush the final board state to the peer when a panel unmounts (close), so an
+  // edit made within the sync debounce window isn't lost.
+  useEffect(() => () => {
+    if (isMainBoard) return;
+    const ch = new BroadcastChannel('floatpad-board-sync');
+    ch.postMessage({ type: 'state', source: boardId, images: imagesRef.current, notes: notesRef.current, annotations: annotationsRef.current });
+    ch.close();
+  }, []);
+
   // Settings "clear board" resets the live board (command emits to all windows).
   useEffect(() => {
     const onCleared = () => {
@@ -1225,22 +1234,15 @@ export default function ImageBoard({ active }) {
   // ── Paste a URL → scrape every image off the page (PureRef) ──
   const scrapeUrl = useCallback(async url => {
     setScrapeBusy(true);
-    const label = 'web-scrape';
+    const label = `web-scrape-${uid()}`;
     try {
-      await ipcRenderer.invoke('web-destroy', label).catch(() => {});
-      const loaded = new Promise(resolve => {
-        let un = null;
-        const timer = setTimeout(() => { un?.(); resolve(); }, 15000);
-        listen('web-event', e => {
-          if (e.payload?.label === label && e.payload.kind === 'load-stop') {
-            clearTimeout(timer);
-            un?.();
-            resolve();
-          }
-        }).then(f => { un = f; });
+      let resolveLoaded; const loaded = new Promise(r => { resolveLoaded = r; });
+      const timer = setTimeout(() => resolveLoaded(), 15000);
+      const un = await listen('web-event', e => {
+        if (e.payload?.label === label && e.payload.kind === 'load-stop') { clearTimeout(timer); resolveLoaded(); }
       });
       await ipcRenderer.invoke('web-create', label, url);
-      await loaded;
+      await loaded; un();
       const srcs = await evalInWebview(
         label,
         `Array.from(document.images).map(i => i.currentSrc || i.src).filter(s => s && s.startsWith('http'))`
@@ -1264,7 +1266,8 @@ export default function ImageBoard({ active }) {
   const gifSelId = singleSelectedImage && isGif(singleSelectedImage) ? singleSelectedImage.id : null;
 
   useEffect(() => {
-    if (!gifSelId) { gifDataRef.current = null; setGif(null); return undefined; }
+    gifDataRef.current = null; setGif(null); // clear stale GIF while the next decodes
+    if (!gifSelId) return undefined;
     let cancelled = false;
     const img = imagesRef.current.find(i => i.id === gifSelId);
     if (!img) return undefined;
@@ -2389,7 +2392,7 @@ export default function ImageBoard({ active }) {
             </button>
             <button className="focus-btn" onClick={() => gifStep(1)} title="Next frame">⏭</button>
             <input
-              type="range" className="gif-timeline" min="0" max={gif.frames.length - 1} ref={gifTimelineRef}
+              type="range" className="gif-timeline" min="0" max={gif.frames.length - 1} defaultValue={0} ref={gifTimelineRef}
               onChange={e => { gifIdxRef.current = Number(e.target.value); setGif(g => ({ ...g, playing: false })); paintGif(); }}
               title="Frame timeline"
             />
@@ -2408,7 +2411,7 @@ export default function ImageBoard({ active }) {
             >
               ⊡ Frame
             </button>
-            <button className="focus-btn" onClick={() => setGif(null)} title="Close GIF controls">✕</button>
+            <button className="focus-btn" onClick={() => { gifDataRef.current = null; setGif(null); }} title="Close GIF controls">✕</button>
           </div>
         )}
 
